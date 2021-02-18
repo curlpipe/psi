@@ -1,7 +1,13 @@
 [package]
-name = "psi"
+name = "psi-lang"
 version = "0.3.0"
 authors = ["curlpipe <11898833+curlpipe@users.noreply.github.com>"]
+description = "A language for configuration and extension"
+homepage = "https://github.com/curlpipe/psi"
+repository = "https://github.com/curlpipe/psi"
+license = "MIT"
+readme = "README.md"
+keywords = ["language", "embeddable", "scripting"]
 edition = "2018"
 
 [profile.release]
