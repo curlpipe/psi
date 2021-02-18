@@ -53,16 +53,13 @@ impl<'a> Interpreter<'a> {
                         Some(self.expr(value.as_ref().unwrap_or(&Expr::Boolean(false)))?);
                     Ok(())
                 } else {
-                    panic!("Return used outside of function")
+                    Err(Error::ReturnOutOfFunction)
                 }
             }
             Action::Loop(block) => self.loop_stmt(block),
             Action::For(id, expr, block) => self.for_stmt(id, expr, block),
             Action::While(expr, block) => self.while_stmt(expr, block),
-            Action::Break => {
-                self.break_stmt();
-                Ok(())
-            }
+            Action::Break => self.break_stmt(),
             Action::Continue => self.continue_stmt(),
             Action::Import(id, into) => self.import_stmt(id, into),
         }
@@ -133,11 +130,12 @@ impl<'a> Interpreter<'a> {
         Ok(())
     }
 
-    fn break_stmt(&mut self) {
+    fn break_stmt(&mut self) -> Result<(), Error> {
         if self.env.in_loop() {
             self.do_break = true;
+            Ok(())
         } else {
-            panic!("Break outside of loop.");
+            Err(Error::BreakOutOfLoop)
         }
     }
 
@@ -146,7 +144,7 @@ impl<'a> Interpreter<'a> {
             self.do_continue = true;
             Ok(())
         } else {
-            panic!("Continue outside of loop.")
+            Err(Error::ContinueOutOfLoop)
         }
     }
 
@@ -216,20 +214,22 @@ impl<'a> Interpreter<'a> {
             Expr::Identifier(id) => self.identifier(id)?,
             Expr::Inclusive(s, e) => self.inclusive(s, e)?,
             Expr::Exclusive(s, e) => self.exclusive(s, e)?,
-            Expr::Array(items) => self.array(items),
-            Expr::Table(items) => self.table(items.to_owned()),
+            Expr::Array(items) => self.array(items)?,
+            Expr::Table(items) => self.table(items.to_owned())?,
             Expr::Not(e) => self.not(e)?,
             Expr::BinOp(left, op, right) => self.bin_op(*left.clone(), *op, *right.clone())?,
             Expr::FnCall(id, args) => {
                 self.fn_call(id, args)?;
-                let val = self
-                    .return_value
-                    .clone()
-                    .expect("Function doesn't have return value");
+                let val = if let Some(val) = self.return_value.clone() {
+                    val
+                } else {
+                    return Err(Error::NoReturnValue);
+                };
                 self.return_value = None;
                 val
             }
             Expr::VarIndex(id, inds) => self.var_index(&*id, inds.to_owned())?,
+            Expr::Impossible => return Err(Error::ImpossibleOperation),
         })
     }
 
@@ -238,11 +238,13 @@ impl<'a> Interpreter<'a> {
         while let Some(ind) = inds.pop_front() {
             let ind = self.expr(&ind)?;
             match result {
-                Expr::StringRaw(s) => result = self.index_string(&s, &ind),
+                Expr::StringRaw(s) => result = self.index_string(&s, &ind)?,
                 Expr::Inclusive(s, e) => {
-                    let (s, e, i) = self
-                        .range_parts(&s, &e, &ind)
-                        .expect("Range indices are integers");
+                    let (s, e, i) = if let Some(rp) = self.range_parts(&s, &e, &ind) {
+                        rp
+                    } else {
+                        return Err(Error::InvalidIndex);
+                    };
                     if s + i <= e {
                         return Ok(Expr::Integer(s + i));
                     } else {
@@ -250,9 +252,11 @@ impl<'a> Interpreter<'a> {
                     }
                 }
                 Expr::Exclusive(s, e) => {
-                    let (s, e, i) = self
-                        .range_parts(&s, &e, &ind)
-                        .expect("Range indices are integers");
+                    let (s, e, i) = if let Some(rp) = self.range_parts(&s, &e, &ind) {
+                        rp
+                    } else {
+                        return Err(Error::InvalidIndex);
+                    };
                     if s + i < e {
                         return Ok(Expr::Integer(s + i));
                     } else {
@@ -284,17 +288,17 @@ impl<'a> Interpreter<'a> {
         Ok(result)
     }
 
-    fn index_string(&mut self, s: &str, ind: &Expr) -> Expr {
+    fn index_string(&mut self, s: &str, ind: &Expr) -> Result<Expr, Error> {
         if let Expr::Integer(i) = ind {
-            Expr::StringRaw(
-                s.chars()
-                    .nth(*i as usize)
-                    .expect("Index out of range")
-                    .to_string()
-                    .into(),
-            )
+            Ok(Expr::StringRaw(
+                if let Some(c) = s.chars().nth(*i as usize) {
+                    c.to_string().into()
+                } else {
+                    return Err(Error::IndexError);
+                },
+            ))
         } else {
-            panic!("String indices are integers")
+            Err(Error::InvalidIndex)
         }
     }
 
@@ -308,10 +312,11 @@ impl<'a> Interpreter<'a> {
 
     fn fn_call(&mut self, id: &Expr, args: &[Expr]) -> Result<(), Error> {
         self.return_value = None;
-        let args: Vec<Expr> = args
-            .iter()
-            .map(|x| self.expr(x).expect("Failed to evaluate"))
-            .collect();
+        let mut args_result = vec![];
+        for i in args {
+            args_result.push(self.expr(i)?);
+        }
+        let args = args_result;
         if let Expr::Identifier(ref parts) = id {
             self.env.enter("function");
             if let Some((needed_arguments, block)) = self.env.get_fn(&parts.join(".")) {
@@ -335,7 +340,7 @@ impl<'a> Interpreter<'a> {
                         self.return_value =
                             Some(Expr::StringRaw(input.trim_end_matches('\n').into()))
                     }
-                    _ => panic!("Function not found!"),
+                    _ => return Err(Error::FunctionNotFound(parts.join(".").into())),
                 }
             }
             self.env.leave();
@@ -361,8 +366,8 @@ impl<'a> Interpreter<'a> {
             Op::Less => Expr::Boolean(left < right),
             Op::GreaterEq => Expr::Boolean(left >= right),
             Op::LessEq => Expr::Boolean(left <= right),
-            Op::Or => Expr::Boolean(left.as_bool() || right.as_bool()),
-            Op::And => Expr::Boolean(left.as_bool() && right.as_bool()),
+            Op::Or => Expr::Boolean(left.as_bool()? || right.as_bool()?),
+            Op::And => Expr::Boolean(left.as_bool()? && right.as_bool()?),
             Op::In => self.in_expr(&left, &right)?,
         })
     }
@@ -374,14 +379,14 @@ impl<'a> Interpreter<'a> {
                 if let Expr::StringRaw(sea) = left {
                     Expr::Boolean(fish.contains(sea.as_str()))
                 } else {
-                    panic!("Mismatched types")
+                    return Err(Error::InvalidIndex);
                 }
             }
             Expr::Inclusive(s, e) => self.in_inc(&s, &e, &left)?,
             Expr::Exclusive(s, e) => self.in_exc(&s, &e, &left)?,
             Expr::Array(ref items) => Expr::Boolean(items.contains(&left)),
             Expr::Table(ref items) => Expr::Boolean(items.contains(&left)),
-            _ => panic!("Mismatched types"),
+            _ => return Err(Error::InvalidIndex),
         })
     }
 
@@ -390,7 +395,7 @@ impl<'a> Interpreter<'a> {
         if let (Expr::Integer(s), Expr::Integer(e), Expr::Integer(l)) = (s, e, left) {
             Ok(Expr::Boolean(l <= &e && l >= &s))
         } else {
-            panic!("Mismatched types")
+            Err(Error::InvalidIndex)
         }
     }
 
@@ -399,7 +404,7 @@ impl<'a> Interpreter<'a> {
         if let (Expr::Integer(s), Expr::Integer(e), Expr::Integer(l)) = (s, e, left) {
             Ok(Expr::Boolean(l < &e && l >= &s))
         } else {
-            panic!("Mismatched types")
+            Err(Error::InvalidIndex)
         }
     }
 
@@ -407,22 +412,21 @@ impl<'a> Interpreter<'a> {
         if let Expr::Boolean(b) = self.expr(e)? {
             Ok(Expr::Boolean(!b))
         } else {
-            panic!("Expression doesn't evaluate to boolean")
+            Err(Error::EvalNotBool)
         }
     }
 
-    fn array(&mut self, items: &[Expr]) -> Expr {
-        Expr::Array(
-            items
-                .iter()
-                .map(|i| self.expr(i).expect("Failed to evaluate"))
-                .collect(),
-        )
+    fn array(&mut self, items: &[Expr]) -> Result<Expr, Error> {
+        let mut items_result = vec![];
+        for i in items {
+            items_result.push(self.expr(i)?);
+        }
+        Ok(Expr::Array(items_result))
     }
 
-    fn table(&mut self, mut items: Table) -> Expr {
-        items.simplify(&mut |x| self.expr(&x).expect("Failed to evaluate"));
-        Expr::Table(items)
+    fn table(&mut self, mut items: Table) -> Result<Expr, Error> {
+        items.simplify(&mut |x| self.expr(&x))?;
+        Ok(Expr::Table(items))
     }
 
     fn inclusive(&mut self, start: &Expr, end: &Expr) -> Result<Expr, Error> {

@@ -1,4 +1,4 @@
-use crate::Expr;
+use crate::{Error, Expr};
 use std::fmt;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
@@ -11,12 +11,16 @@ impl Table {
         Self { data }
     }
 
-    pub fn simplify(&mut self, expr: &mut dyn FnMut(Expr) -> Expr) {
+    pub fn simplify(
+        &mut self,
+        expr: &mut dyn FnMut(Expr) -> Result<Expr, Error>,
+    ) -> Result<(), Error> {
         let mut result = vec![];
         for (k, v) in self.data.clone() {
-            result.push((expr(k), expr(v)));
+            result.push((expr(k)?, expr(v)?));
         }
         self.data = result;
+        Ok(())
     }
 
     pub fn get(&self, index: Expr) -> Option<Expr> {

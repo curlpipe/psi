@@ -1,4 +1,4 @@
-use crate::{Identifier, Identifiers, Table};
+use crate::{Error, Identifier, Identifiers, Table};
 use smartstring::alias::String;
 use std::collections::VecDeque;
 use std::fmt;
@@ -20,6 +20,7 @@ pub enum Expr {
     BinOp(Box<Expr>, Op, Box<Expr>),
     FnCall(Box<Expr>, Identifiers),
     VarIndex(Box<Expr>, VecDeque<Expr>),
+    Impossible,
 }
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
@@ -49,7 +50,7 @@ impl Add for Expr {
             (Self::Integer(i), Self::Float(f)) => Self::Float(i as f64 + f),
             (Self::Float(f), Self::Integer(i)) => Self::Float(f + i as f64),
             (Self::Integer(i1), Self::Integer(i2)) => Self::Integer(i1 + i2),
-            _ => panic!("Impossible operation"),
+            _ => Self::Impossible,
         }
     }
 }
@@ -62,7 +63,7 @@ impl Sub for Expr {
             (Self::Integer(i), Self::Float(f)) => Self::Float(i as f64 - f),
             (Self::Float(f), Self::Integer(i)) => Self::Float(f - i as f64),
             (Self::Integer(i1), Self::Integer(i2)) => Self::Integer(i1 - i2),
-            _ => panic!("Impossible operation"),
+            _ => Self::Impossible,
         }
     }
 }
@@ -75,7 +76,7 @@ impl Mul for Expr {
             (Self::Integer(i), Self::Float(f)) => Self::Float(i as f64 * f),
             (Self::Float(f), Self::Integer(i)) => Self::Float(f * i as f64),
             (Self::Integer(i1), Self::Integer(i2)) => Self::Integer(i1 * i2),
-            _ => panic!("Impossible operation"),
+            _ => Self::Impossible,
         }
     }
 }
@@ -88,7 +89,7 @@ impl Div for Expr {
             (Self::Integer(i), Self::Float(f)) => Self::Float(i as f64 / f),
             (Self::Float(f), Self::Integer(i)) => Self::Float(f / i as f64),
             (Self::Integer(i1), Self::Integer(i2)) => Self::Float(i1 as f64 / i2 as f64),
-            _ => panic!("Impossible operation"),
+            _ => Self::Impossible,
         }
     }
 }
@@ -101,7 +102,7 @@ impl Rem for Expr {
             (Self::Integer(i), Self::Float(f)) => Self::Float(i as f64 % f),
             (Self::Float(f), Self::Integer(i)) => Self::Float(f % i as f64),
             (Self::Integer(i1), Self::Integer(i2)) => Self::Integer(i1 % i2),
-            _ => panic!("Impossible operation"),
+            _ => Self::Impossible,
         }
     }
 }
@@ -113,15 +114,15 @@ impl Expr {
             (Self::Integer(i), Self::Float(f)) => Self::Float((i as f64).powf(f)),
             (Self::Float(f), Self::Integer(i)) => Self::Float(f.powf(i as f64)),
             (Self::Integer(i1), Self::Integer(i2)) => Self::Float((i1 as f64).powf(i2 as f64)),
-            _ => panic!("Impossible operation"),
+            _ => Self::Impossible,
         }
     }
 
-    pub fn as_bool(&self) -> bool {
+    pub fn as_bool(&self) -> Result<bool, Error> {
         if let Expr::Boolean(b) = self {
-            *b
+            Ok(*b)
         } else {
-            panic!("Expression doesn't evaluate to bool")
+            Err(Error::EvalNotBool)
         }
     }
 }
@@ -188,6 +189,7 @@ impl fmt::Display for Expr {
             ),
             Expr::BinOp(l, o, r) => write!(f, "{} {} {}", l, o, r),
             Expr::Not(e) => write!(f, "not {}", e),
+            _ => unreachable!(),
         }
     }
 }

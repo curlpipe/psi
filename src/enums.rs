@@ -39,7 +39,7 @@ impl Action {
     pub fn to_expr(&self) -> Expr {
         match self {
             Action::FnCall(i, a) => Expr::FnCall(Box::new(i.to_owned()), a.to_owned()),
-            _ => panic!("Impossible operation"),
+            _ => unreachable!(),
         }
     }
 }
