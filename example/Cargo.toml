@@ -1,0 +1,15 @@
+[package]
+name = "example"
+version = "0.3.0"
+authors = ["curlpipe <11898833+curlpipe@users.noreply.github.com>"]
+edition = "2018"
+
+[profile.release]
+debug = true
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+[dependencies]
+psi = { path = "../" }
+rustc-hash = "1.1.0"

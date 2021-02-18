@@ -1,0 +1,115 @@
+// Root
+stmts = { SOI ~ delim* ~ (stmt ~ delim*)* ~ stmt? ~  EOI }
+stmt = { fn_call | var_assign | ifs | fn_def | comment | 
+		 for_stmt | loop_stmt | loop_control | return_stmt |
+         while_stmt | single_shot | import_stmt }
+expr = { contains | not | fn_call | comb }
+block = { "{" ~ delim* ~ (stmt ~ delim*)* ~ stmt? ~ "}" }
+
+// If statements
+ifs = { if_stmt ~ else_if_stmt* ~ else_stmt? }
+if_stmt = { "if" ~ expr ~ block }
+else_if_stmt = { "else if" ~ expr ~ block }
+else_stmt = { "else" ~ block }
+
+// While statement
+while_stmt = { "while" ~ expr ~ block }
+
+// For statements
+for_stmt = { "for" ~ "("? ~ args ~ ")"? ~ "in" ~ iterable ~ block }
+
+// Loop statement
+loop_stmt = { "loop" ~ block }
+loop_control = { break_stmt | continue_stmt }
+break_stmt = { "break" }
+continue_stmt = { "continue" }
+
+// Contains expression
+contains = { atom ~ "in" ~ iterable }
+iterable = { array | table | var_index | inclusive | exclusive | identifier }
+
+// Imports
+import_stmt = { "import" ~ identifier ~ ("as" ~ identifier)? }
+
+// Functions
+fn_call = { identifier ~ "(" ~ expr? ~ ("," ~ expr)* ~ ","? ~  ")" }
+fn_def = { "fn" ~ identifier ~ "(" ~ args ~ ")" ~ block }
+args = { identifier_part? ~ ("," ~ identifier_part)* ~ ","? }
+return_stmt = @{ "return" ~ " "* ~ return_expr }
+return_expr = !{ expr? }
+
+// Variable assignment
+var_assign = { identifier ~ "=" ~ expr }
+identifier = { identifier_part ~ ("." ~ identifier_part)* }
+identifier_part = @{ !(reserved ~ !(letter)) ~ letter ~ (letter | digit | "_")* }
+
+// Arithmetic, logic and comparison
+single_shot = { ss_sub | ss_add | ss_mul | ss_div | ss_rem | ss_pow }
+ss_sub = { identifier ~ "-=" ~ expr }
+ss_add = { identifier ~ "+=" ~ expr }
+ss_mul = { identifier ~ "*=" ~ expr }
+ss_div = { identifier ~ "/=" ~ expr }
+ss_rem = { identifier ~ "%=" ~ expr }
+ss_pow = { identifier ~ "^=" ~ expr }
+
+comb = { eq ~ ((and | or) ~ eq)? }
+eq = { comp ~ ((equals | not_equals) ~ comp)? }
+comp = { sub ~ ((greater_eq | less_eq | greater | less) ~ sub)? }
+sub = { add ~ ("-" ~ add)* }
+add = { mul ~ ("+" ~ mul)* }
+mul = { div ~ ("*" ~ div)* }
+div = { rem ~ ("/" ~ rem)* }
+rem = { pow ~ ("%" ~ pow)* }
+pow = { var_index ~ ("^" ~ var_index)* }
+var_index = { atom ~ ("[" ~ expr ~ "]")* }
+atom = { datatype | "(" ~ expr ~ ")" | sign | identifier }
+sign = { (positive | negative) ~ (float | integer | sign) }
+not = { ("not" | "!") ~ expr }
+positive = { "+" }
+negative = { "-" }
+equals = { "==" }
+not_equals = { "!=" }
+greater = { ">" }
+less = { "<" }
+greater_eq = { ">=" }
+less_eq = { "<=" }
+and = { "and" }
+or = { "or" }
+
+// Datatypes
+datatype = { boolean | array | table | inclusive | exclusive | float | integer | string }
+table = { "{" ~ (table_pair ~ ("," ~ table_pair)*)? ~ ","? ~ "}" }
+table_pair = { datatype ~ ":" ~ expr }
+array = { "[" ~ (expr ~ ("," ~ expr)*)? ~ ","? ~ "]" }
+inclusive = { bound ~ "..." ~ bound }
+exclusive = { bound ~ ".." ~ bound }
+bound = { "(" ~ expr ~ ")" | sign | integer | identifier }
+boolean = @{ "true" | "false" }
+float = @{ digit+ ~ "." ~ digit+ }
+integer = @{ digit+ }
+string = ${ "\"" ~ string_part* ~ "\"" }
+string_part = { string_esc | string_expr | string_char }
+string_esc = { string_brack | string_quote }
+string_brack = { "\\{" }
+string_quote = { "\\\"" }
+string_char = { (!("\"" | "{" | string_esc) ~ ANY)+ }
+string_expr = !{ "{" ~ expr ~ "}" }
+
+// Tokens
+letter = _{ 'a'..'z' | 'A'..'Z' }
+digit = _{ '0'..'9' }
+
+// Reserved keywords
+reserved = { "in" | "and" | "or" | "true" | "false" | "not" | "if" | 
+             "else" | "fn" | "for" | "loop" | "continue" | "break" | 
+             "return" | "while" | "import" | "as" }
+
+// Text to ignore
+comment = ${ 
+	"/*" ~ (!("*/") ~ ANY)* ~ "*/" | // Multiline comments
+    "//" ~ (!("\n") ~ ANY)* ~ "\n"   // Single line comments
+}
+
+delim = _{ ";" | "\n" }
+
+WHITESPACE = _{ " " | "\n" | "\t" }
