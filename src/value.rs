@@ -1,5 +1,5 @@
 // value.rs - Representation and operations of data types
-use std::ops::{Add, Sub, Mul, Div, Neg};
+use std::ops::{Add, Sub, Mul, Div, Neg, Rem};
 use round::round;
 use std::fmt;
 
@@ -51,6 +51,16 @@ impl Div for Value {
     fn div(self, other: Value) -> Self::Output {
         match (self, other) {
             (Self::Number(a), Self::Number(b)) => Self::Number(a / b),
+            _ => panic!("Impossible Operation"),
+        }
+    }
+}
+
+impl Rem for Value {
+    type Output = Value;
+    fn rem(self, other: Value) -> Self::Output {
+        match (self, other) {
+            (Self::Number(a), Self::Number(b)) => Self::Number(a % b),
             _ => panic!("Impossible Operation"),
         }
     }

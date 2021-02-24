@@ -55,6 +55,7 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
             TokenKind::Plus => Some(Compiler::binary),
             TokenKind::Asterisk => Some(Compiler::binary),
             TokenKind::Slash => Some(Compiler::binary),
+            TokenKind::Percent => Some(Compiler::binary),
             _ => None,
         },
         prec: match kind {
@@ -62,6 +63,7 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
             TokenKind::Plus => Precedence::Term,
             TokenKind::Slash => Precedence::Factor,
             TokenKind::Asterisk => Precedence::Factor,
+            TokenKind::Percent => Precedence::Factor,
             _ => Precedence::None,
         },
     }

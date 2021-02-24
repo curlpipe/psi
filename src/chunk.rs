@@ -9,6 +9,7 @@ pub enum OpCode {
     OpSub,
     OpMul,
     OpDiv,
+    OpMod,
     OpReturn,
     OpNegate,
 }
@@ -75,6 +76,7 @@ impl fmt::Display for OpCode {
             OpCode::OpSub => write!(fmt, "OP_SUB"),
             OpCode::OpMul => write!(fmt, "OP_MUL"),
             OpCode::OpDiv => write!(fmt, "OP_DIV"),
+            OpCode::OpMod => write!(fmt, "OP_MOD"),
             OpCode::OpReturn => write!(fmt, "OP_RETURN"),
             OpCode::OpNegate => write!(fmt, "OP_NEGATE"),
         }

@@ -9,6 +9,7 @@ pub enum TokenKind {
     Minus,
     Asterisk,
     Slash,
+    Percent,
     LeftParen,
     RightParen,
     EOI,
@@ -22,6 +23,7 @@ impl fmt::Display for TokenKind {
             Self::Minus => write!(fmt, "'-'"),
             Self::Asterisk => write!(fmt, "'*'"),
             Self::Slash => write!(fmt, "'/'"),
+            Self::Percent => write!(fmt, "'%'"),
             Self::LeftParen => write!(fmt, "'('"),
             Self::RightParen => write!(fmt, "')'"),
             Self::EOI => write!(fmt, "end of input"),
@@ -67,6 +69,7 @@ impl Lexer {
                 '-' => self.mk_token(TokenKind::Minus, 1),
                 '*' => self.mk_token(TokenKind::Asterisk, 1),
                 '/' => self.mk_token(TokenKind::Slash, 1),
+                '%' => self.mk_token(TokenKind::Percent, 1),
                 '(' => self.mk_token(TokenKind::LeftParen, 1),
                 ')' => self.mk_token(TokenKind::RightParen, 1),
                 // Capture numbers

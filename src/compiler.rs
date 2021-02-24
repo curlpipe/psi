@@ -69,6 +69,7 @@ impl Compiler {
             TokenKind::Minus => OpCode::OpSub,
             TokenKind::Asterisk => OpCode::OpMul,
             TokenKind::Slash => OpCode::OpDiv,
+            TokenKind::Percent => OpCode::OpMod,
             _ => unreachable!(),
         });
         Ok(())
