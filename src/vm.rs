@@ -46,6 +46,7 @@ impl VM {
                 OpCode::OpMul => self.bin_op("*"),
                 OpCode::OpDiv => self.bin_op("/"),
                 OpCode::OpMod => self.bin_op("%"),
+                OpCode::OpPow => self.bin_op("^"),
                 OpCode::OpReturn => {
                     println!("{}", self.stack.pop().unwrap());
                     break
@@ -65,6 +66,7 @@ impl VM {
             "*" => self.stack.push(a * b),
             "/" => self.stack.push(a / b),
             "%" => self.stack.push(a % b),
+            "^" => self.stack.push(a ^ b),
             _ => unreachable!(),
         }
     }

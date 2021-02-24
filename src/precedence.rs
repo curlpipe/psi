@@ -17,6 +17,7 @@ pub enum Precedence {
     Comparison,
     Term,
     Factor,
+    Indices,
     Unary,
     Call,
     Primary,
@@ -33,7 +34,8 @@ impl Precedence {
             Self::Equality => Self::Comparison,
             Self::Comparison => Self::Term,
             Self::Term => Self::Factor,
-            Self::Factor => Self::Unary,
+            Self::Factor => Self::Indices,
+            Self::Indices => Self::Unary,
             Self::Unary => Self::Call,
             Self::Call => Self::Primary,
             Self::Primary => Self::None,
@@ -56,6 +58,7 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
             TokenKind::Asterisk => Some(Compiler::binary),
             TokenKind::Slash => Some(Compiler::binary),
             TokenKind::Percent => Some(Compiler::binary),
+            TokenKind::Hat => Some(Compiler::binary),
             _ => None,
         },
         prec: match kind {
@@ -64,6 +67,7 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
             TokenKind::Slash => Precedence::Factor,
             TokenKind::Asterisk => Precedence::Factor,
             TokenKind::Percent => Precedence::Factor,
+            TokenKind::Hat => Precedence::Indices,
             _ => Precedence::None,
         },
     }
