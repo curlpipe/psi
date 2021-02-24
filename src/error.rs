@@ -11,7 +11,7 @@ pub enum Error {
     #[error("Error: Unexpected end of input")]
     UnexpectedEOI,
     // When the consume method misses a token e.g. missing end bracket
-    #[error("Error: [line {1} column {2}] Expected token: '{:0?}'")]
+    #[error("Error: [line {1} column {2}] Expected {0}")]
     ExpectedToken(TokenKind, usize, usize),
     // When the the compiler tries to parse a dodgy token stream e.g. "1 + * 2"
     #[error("Error: [line {0} column {1}] Expected expression")]

@@ -1,5 +1,6 @@
 // lexer.rs - For turning streams of characters into tokens
 use crate::Error;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenKind {
@@ -11,6 +12,21 @@ pub enum TokenKind {
     LeftParen,
     RightParen,
     EOI,
+}
+
+impl fmt::Display for TokenKind {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Number(_) => write!(fmt, "number"),
+            Self::Plus => write!(fmt, "'+'"),
+            Self::Minus => write!(fmt, "'-'"),
+            Self::Asterisk => write!(fmt, "'*'"),
+            Self::Slash => write!(fmt, "'/'"),
+            Self::LeftParen => write!(fmt, "'('"),
+            Self::RightParen => write!(fmt, "')'"),
+            Self::EOI => write!(fmt, "end of input"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -64,6 +64,7 @@ fn file(path: &str, verbose: bool) {
 fn repl(verbose: bool) {
     // Initiate bytecode VM
     let mut vm = VM::new(verbose);
+    println!("Ψ PSI Interpreter {}", env!("CARGO_PKG_VERSION"));
     loop {
         // Prompt user for input
         let input: String = scanln!("> ");
@@ -81,7 +82,7 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
     let mut lexer = Lexer::new(&src);
     // Run the lexer and handle any errors
     if let Err(error) = lexer.run() {
-        println!("> {}", error);
+        println!("=> {}\n", error);
         return
     }
     // Show result
@@ -96,7 +97,7 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
     let mut compiler = Compiler::new(lexer.tokens);
     // Run the compiler and handle any errors
     if let Err(error) = compiler.compile() {
-        println!("> {}", error);
+        println!("=> {}\n", error);
         return
     }
     // Show result
@@ -109,7 +110,7 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
         println!("\nExecuting bytecode chunk in VM:")
     }
     if let Err(error) = vm.run(compiler.chunk) {
-        println!("> {}", error);
+        println!("=> {}\n", error);
         return
     }
     // Display success
