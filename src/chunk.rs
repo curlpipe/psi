@@ -1,4 +1,5 @@
 // chunk.rs - Utilities for representing chunks of bytecode
+use lliw::{Fg, Style, Reset};
 use crate::Value;
 use std::fmt;
 
@@ -18,7 +19,7 @@ pub enum OpCode {
 pub struct Chunk {
     pub code: Vec<OpCode>,
     pub constants: Vec<Value>,
-    line: usize,
+    pub line: usize,
 }
 
 impl Chunk {
@@ -54,16 +55,17 @@ impl Chunk {
         // Disassemble and display an instruction
         match instruction {
             OpCode::OpConstant(idx) => println!(
-                "=> {:04} {} {} {}", 
-                self.line, 
-                instruction, 
-                idx, 
-                self.constants[*idx as usize]
+                "=> {}{:04} {}{}{} {}{}{} {}{}", 
+                Fg::Blue, self.line,
+                Fg::LightBlack, Style::Bold, instruction, Style::NoBold,
+                Fg::Blue, idx, self.constants[*idx as usize],
+                Fg::Reset,
             ),
             _ => println!(
-                "=> {:04} {}", 
-                self.line, 
-                instruction
+                "=> {}{:04} {}{}{}{}", 
+                Fg::Blue, self.line, 
+                Fg::LightBlack, Style::Bold, instruction,
+                Reset,
             ),
         }
     }
@@ -71,17 +73,17 @@ impl Chunk {
 
 impl fmt::Display for OpCode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            OpCode::OpConstant(_) => write!(fmt, "OP_CONSTANT"),
-            OpCode::OpAdd => write!(fmt, "OP_ADD"),
-            OpCode::OpSub => write!(fmt, "OP_SUB"),
-            OpCode::OpMul => write!(fmt, "OP_MUL"),
-            OpCode::OpDiv => write!(fmt, "OP_DIV"),
-            OpCode::OpMod => write!(fmt, "OP_MOD"),
-            OpCode::OpPow => write!(fmt, "OP_POW"),
-            OpCode::OpReturn => write!(fmt, "OP_RETURN"),
-            OpCode::OpNegate => write!(fmt, "OP_NEGATE"),
-        }
+        write!(fmt, "{}", match self {
+            OpCode::OpConstant(_) => "OP_CONSTANT",
+            OpCode::OpAdd => "OP_ADD",
+            OpCode::OpSub => "OP_SUB",
+            OpCode::OpMul => "OP_MUL",
+            OpCode::OpDiv => "OP_DIV",
+            OpCode::OpMod => "OP_MOD",
+            OpCode::OpPow => "OP_POW",
+            OpCode::OpReturn => "OP_RETURN",
+            OpCode::OpNegate => "OP_NEGATE",
+        })
     }
 }
 

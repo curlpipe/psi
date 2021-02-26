@@ -1,6 +1,6 @@
 [package]
 name = "psibyte"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["curlpipe <11898833+curlpipe@users.noreply.github.com>"]
 edition = "2018"
 
@@ -15,3 +15,4 @@ clap = { version = "2.33.3", default-features = false }
 round = "0.1.0"
 scanln = "0.1.1"
 thiserror = "1.0.23"
+lliw = "0"

@@ -20,6 +20,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lliw"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6a10d6d1fe2f579e6cb994ab1cacf0433a162d700df057af7ed08e2085b6d61"
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -30,9 +36,10 @@ dependencies = [
 
 [[package]]
 name = "psibyte"
-version = "0.1.2"
+version = "0.1.4"
 dependencies = [
  "clap",
+ "lliw",
  "round",
  "scanln",
  "thiserror",

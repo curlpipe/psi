@@ -7,8 +7,10 @@ mod lexer;
 mod value;
 mod vm;
 
+use lliw::Fg::{Red, Yellow, Green, Blue};
 use precedence::{Precedence, get_rule};
 use lexer::{Token, Lexer, TokenKind};
+use lliw::Style::{Bold, NoBold};
 use chunk::{OpCode, Chunk};
 use compiler::Compiler;
 use std::time::Instant;
@@ -16,6 +18,7 @@ use clap::{App, Arg};
 use scanln::scanln;
 use error::Error;
 use value::Value;
+use lliw::Reset;
 use std::fs;
 use vm::VM;
 
@@ -57,14 +60,18 @@ fn file(path: &str, verbose: bool) {
         let mut vm = VM::new(verbose);
         run(&contents, &mut vm, verbose)
     } else {
-        println!("Error: Failed to find file '{}'", path);
+        println!("{}{}Error: Failed to find file '{}'{}", Red, Bold, path, Reset);
     }
 }
 
 fn repl(verbose: bool) {
     // Initiate bytecode VM
     let mut vm = VM::new(verbose);
-    println!("Ψ PSI Interpreter {}", env!("CARGO_PKG_VERSION"));
+    println!(
+        "{}Ψ PSI Interpreter {}{}{}{}", 
+        Bold, NoBold, 
+        Blue, env!("CARGO_PKG_VERSION"), Reset
+    );
     loop {
         // Prompt user for input
         let input: String = scanln!("> ");
@@ -77,45 +84,44 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
     let start = Instant::now();
     // Initiate a lexer
     if verbose { 
-        println!("Lexing from character stream to token stream..."); 
+        println!("{}{}Lexing from character stream to token stream...{}", Yellow, Bold, Reset);
     }
     let mut lexer = Lexer::new(&src);
     // Run the lexer and handle any errors
     if let Err(error) = lexer.run() {
-        println!("=> {}\n", error);
+        println!("=> {}{}{}{}", Red, Bold, error, Reset);
         return
     }
     // Show result
     if verbose { 
-        println!("\nSuccess! Token stream:"); 
+        println!("\n{}{}Success!{} Token stream:", Green, Bold, Reset); 
         lexer.display();
     }
     // Initiate compiler
     if verbose { 
-        println!("\nCompiling from token stream to bytecode chunk..."); 
+        println!("\n{}{}Compiling from token stream to bytecode...{}", Yellow, Bold, Reset); 
     }
     let mut compiler = Compiler::new(lexer.tokens);
     // Run the compiler and handle any errors
     if let Err(error) = compiler.compile() {
-        println!("=> {}\n", error);
+        println!("=> {}{}{}{}", Red, Bold, error, Reset);
         return
     }
     // Show result
     if verbose {
-        println!("\nSuccess! Disassembled bytecode chunk:");
+        println!("\n{}{}Success!{} Disassembled bytecode:", Green, Bold, Reset);
         compiler.display();
     }
     // Run virtual machine
     if verbose {
-        println!("\nExecuting bytecode chunk in VM:")
+        println!("{}{}\nExecuting bytecode chunk in VM:{}", Yellow, Bold, Reset);
     }
     if let Err(error) = vm.run(compiler.chunk) {
-        println!("=> {}\n", error);
+        vm.stack.clear(); // Clear the VM stack after a runtime error
+        println!("=> {}{}{}{}", Red, Bold, error, Reset);
         return
     }
     // Display success
     let end = Instant::now();
-    if verbose { 
-        println!("\nSuccess! Done in {:?}", end - start); 
-    }
+    println!("{}{}Success!{} Done in {}{:?}{}", Green, Bold, Reset, Blue, end - start, Reset);
 }

@@ -78,9 +78,13 @@ impl Compiler {
 
     pub fn number(&mut self) -> Result<(), Error> {
         // Emit a number constant
-        if let TokenKind::Number(float) = self.get_back().unwrap().kind {
-            self.emit_constant(Value::Number(float));
-        }
+        self.emit_constant(match self.get_back().unwrap().kind {
+            TokenKind::Number(float) => Value::Number(float),
+            TokenKind::Nil => Value::Nil,
+            TokenKind::True => Value::Boolean(true),
+            TokenKind::False => Value::Boolean(false),
+            _ => unreachable!(),
+        });
         Ok(())
     }
 

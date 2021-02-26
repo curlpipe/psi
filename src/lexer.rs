@@ -4,15 +4,14 @@ use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenKind {
+    // Single character tokens
+    Plus, Minus, Asterisk, Slash, Percent, Hat,
+    LeftParen, RightParen,
+    // Datatypes
     Number(f64),
-    Plus,
-    Minus,
-    Asterisk,
-    Slash,
-    Percent,
-    Hat,
-    LeftParen,
-    RightParen,
+    // Keywords
+    True, False, Nil,
+    // Special
     EOI,
 }
 
@@ -28,6 +27,9 @@ impl fmt::Display for TokenKind {
             Self::Hat => write!(fmt, "'^'"),
             Self::LeftParen => write!(fmt, "'('"),
             Self::RightParen => write!(fmt, "')'"),
+            Self::True => write!(fmt, "'true'"),
+            Self::False => write!(fmt, "'false'"),
+            Self::Nil => write!(fmt, "'nil'"),
             Self::EOI => write!(fmt, "end of input"),
         }
     }
@@ -70,11 +72,50 @@ impl Lexer {
                 '+' => self.mk_token(TokenKind::Plus, 1),
                 '-' => self.mk_token(TokenKind::Minus, 1),
                 '*' => self.mk_token(TokenKind::Asterisk, 1),
-                '/' => self.mk_token(TokenKind::Slash, 1),
                 '%' => self.mk_token(TokenKind::Percent, 1),
                 '^' => self.mk_token(TokenKind::Hat, 1),
                 '(' => self.mk_token(TokenKind::LeftParen, 1),
                 ')' => self.mk_token(TokenKind::RightParen, 1),
+                '/' => if self.peek(1) == Some('/') {
+                    // Single line comment
+                    self.advance();
+                    self.advance();
+                    while let Some(c) = self.get() {
+                        // Keep on walkin' to the end of the line
+                        if c == '\n' {
+                            self.line += 1;
+                            self.col = 1;
+                            break
+                        } else {
+                            self.advance();
+                        }
+                    }
+                } else if Some('*') == self.peek(1) {
+                    // Mulitline comment
+                    self.advance();
+                    self.advance();
+                    while let Some(c) = self.get() {
+                        // Keep on walkin' to the end of the line
+                        if c == '*' && self.peek(1) == Some('/') {
+                            self.advance();
+                            break;
+                        } else if c == '\n' {
+                            self.line += 1;
+                            self.col = 1;
+                            self.advance();
+                        } else {
+                            self.advance();
+                        }
+                    }
+                } else {
+                    // Just your average slash character
+                    self.mk_token(TokenKind::Slash, 1);
+                }
+                // Capture identifiers and keywords
+                'a'..='z' => { 
+                    self.word()?; 
+                    continue; 
+                }
                 // Capture numbers
                 '0'..='9' => { 
                     self.number();
@@ -120,6 +161,29 @@ impl Lexer {
         );
     }
 
+    fn word(&mut self) -> Result<(), Error> {
+        // For identifiers & keywords
+        let (c, line, col) = (self.get().unwrap(), self.line, self.col);
+        // Capture entire word
+        let mut word = String::new();
+        while let Some(c) = self.get() {
+            if let 'a'..='z' = c {
+                word.push(c);
+                self.advance();
+            } else {
+                break;
+            }
+        }
+        // Look up the word and determine if keyword or identifier
+        match word.as_str() {
+            "true" => self.mk_token(TokenKind::True, 4),
+            "false" => self.mk_token(TokenKind::False, 5),
+            "nil" => self.mk_token(TokenKind::Nil, 3),
+            _ => return Err(Error::UnexpectedCharacter(c, line, col))
+        }
+        Ok(())
+    }
+
     fn advance(&mut self) {
         // To move the character focus forward
         self.ptr += 1;
@@ -129,6 +193,11 @@ impl Lexer {
     fn get(&mut self) -> Option<char> {
         // To get the current character focus
         Some(*self.chars.get(self.ptr)?)
+    }
+
+    fn peek(&mut self, vec: isize) -> Option<char> {
+        // Peek ahead a certain number of chars
+        Some(*self.chars.get((self.ptr as isize + vec) as usize)?)
     }
 
     fn mk_token(&mut self, kind: TokenKind, len: usize) {

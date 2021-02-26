@@ -16,5 +16,8 @@ pub enum Error {
     // When the the compiler tries to parse a dodgy token stream e.g. "1 + * 2"
     #[error("Error: [line {0} column {1}] Expected expression")]
     ExpectedExpression(usize, usize),
+    // When the user provides incorrect types in operations e.g. "-false + true"
+    #[error("Error: [line {0} column {1}] Mismatched types: {2}")]
+    MismatchedTypes(usize, usize, String),
 }
 

@@ -49,7 +49,9 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
         prefix: match kind {
             TokenKind::LeftParen => Some(Compiler::grouping),
             TokenKind::Minus => Some(Compiler::unary),
-            TokenKind::Number(_) => Some(Compiler::number),
+            TokenKind::Number(_) | 
+            TokenKind::True | TokenKind::False | 
+            TokenKind::Nil => Some(Compiler::number),
             _ => None,
         },
         infix: match kind {

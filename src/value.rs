@@ -6,12 +6,16 @@ use std::fmt;
 #[derive(Clone)]
 pub enum Value {
     Number(f64),
+    Boolean(bool),
+    Nil,
 }
 
 impl fmt::Display for Value {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Number(f) => write!(fmt, "'{}'", round(*f, 5)),
+            Self::Boolean(f) => write!(fmt, "'{}'", f),
+            Self::Nil => write!(fmt, "'nil'"),
         }
     }
 }
