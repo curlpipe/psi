@@ -1,4 +1,5 @@
 // lexer.rs - For turning streams of characters into tokens
+//use unicode_width::UnicodeWidthStr as width;
 use crate::Error;
 use std::fmt;
 
@@ -39,7 +40,7 @@ impl fmt::Display for TokenKind {
 pub struct Token {
     pub kind: TokenKind,
     start: usize,
-    len: usize,
+    pub len: usize,
     pub line: usize,
     pub col: usize,
 }
@@ -128,7 +129,7 @@ impl Lexer {
                     self.line += 1;
                     self.col = 1;
                 }
-                _ => return Err(Error::UnexpectedCharacter(c, self.line, self.col)),
+                _ => return Err(Error::UnexpectedCharacter(c, self.line, self.col, 1)),
             }
             self.advance();
         }
@@ -139,6 +140,7 @@ impl Lexer {
 
     fn number(&mut self) {
         // Create a number token
+        let (ptr, line, col) = (self.ptr, self.line, self.col);
         let mut result = String::new();
         // Collect all digits
         while let Some('0'..='9') = self.get() {
@@ -155,15 +157,15 @@ impl Lexer {
             }
         }
         // Create token and parse number
-        self.mk_token(
+        self.mk_long_token(
             TokenKind::Number(result.parse().unwrap()), 
-            result.chars().count()
+            [result.chars().count(), ptr, line, col]
         );
     }
 
     fn word(&mut self) -> Result<(), Error> {
         // For identifiers & keywords
-        let (c, line, col) = (self.get().unwrap(), self.line, self.col);
+        let (c, ptr, line, col) = (self.get().unwrap(), self.ptr, self.line, self.col);
         // Capture entire word
         let mut word = String::new();
         while let Some(c) = self.get() {
@@ -176,10 +178,11 @@ impl Lexer {
         }
         // Look up the word and determine if keyword or identifier
         match word.as_str() {
-            "true" => self.mk_token(TokenKind::True, 4),
-            "false" => self.mk_token(TokenKind::False, 5),
-            "nil" => self.mk_token(TokenKind::Nil, 3),
-            _ => return Err(Error::UnexpectedCharacter(c, line, col))
+            "true" => self.mk_long_token(TokenKind::True, [4, ptr, line, col]),
+            "false" => self.mk_long_token(TokenKind::False, [5, ptr, line, col]),
+            "nil" => self.mk_long_token(TokenKind::Nil, [3, ptr, line, col]),
+            //_ => return Err(Error::UnexpectedCharacter(c, line, col, width::width(word.as_str())))
+            _ => return Err(Error::UnexpectedCharacter(c, line, col, 1))
         }
         Ok(())
     }
@@ -198,6 +201,17 @@ impl Lexer {
     fn peek(&mut self, vec: isize) -> Option<char> {
         // Peek ahead a certain number of chars
         Some(*self.chars.get((self.ptr as isize + vec) as usize)?)
+    }
+
+    fn mk_long_token(&mut self, kind: TokenKind, start: [usize; 4]) {
+        // Generates a long token with custom start points
+        self.tokens.push(Token {
+            kind,
+            len: start[0],
+            start: start[1],
+            line: start[2],
+            col: start[3],
+        })
     }
 
     fn mk_token(&mut self, kind: TokenKind, len: usize) {

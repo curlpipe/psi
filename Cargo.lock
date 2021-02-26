@@ -36,13 +36,15 @@ dependencies = [
 
 [[package]]
 name = "psibyte"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "clap",
  "lliw",
  "round",
  "scanln",
  "thiserror",
+ "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]
@@ -105,6 +107,12 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "unicode-segmentation"
+version = "1.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb0d2e7be6ae3a5fa87eed5fb451aff96f2573d2694942e40543ae0bbe19c796"
 
 [[package]]
 name = "unicode-width"

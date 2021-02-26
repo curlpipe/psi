@@ -17,7 +17,7 @@ pub enum OpCode {
 }
 
 pub struct Chunk {
-    pub code: Vec<OpCode>,
+    pub code: Vec<(usize, usize, OpCode)>,
     pub constants: Vec<Value>,
     pub line: usize,
 }
@@ -32,9 +32,9 @@ impl Chunk {
         }
     }
 
-    pub fn write(&mut self, code: OpCode) {
+    pub fn write(&mut self, code: OpCode, col: usize, len: usize) {
         // Add an instruction to this chunk
-        self.code.push(code)
+        self.code.push((col, len, code))
     }
 
     pub fn add_constant(&mut self, value: Value) -> u16 {
@@ -46,24 +46,24 @@ impl Chunk {
 
     pub fn display(&self) {
         // Display the chunk in text format
-        for i in &self.code {
-            self.disassemble_instruction(i);
+        for (_, c, i) in &self.code {
+            self.disassemble_instruction(i, *c);
         }
     }
 
-    pub fn disassemble_instruction(&self, instruction: &OpCode) {
+    pub fn disassemble_instruction(&self, instruction: &OpCode, col: usize) {
         // Disassemble and display an instruction
         match instruction {
             OpCode::OpConstant(idx) => println!(
-                "=> {}{:04} {}{}{} {}{}{} {}{}", 
-                Fg::Blue, self.line,
+                "=> {}{:04} {:03} {}{}{} {}{}{} {}{}", 
+                Fg::Blue, self.line, col,
                 Fg::LightBlack, Style::Bold, instruction, Style::NoBold,
                 Fg::Blue, idx, self.constants[*idx as usize],
                 Fg::Reset,
             ),
             _ => println!(
-                "=> {}{:04} {}{}{}{}", 
-                Fg::Blue, self.line, 
+                "=> {}{:04} {:03} {}{}{}{}", 
+                Fg::Blue, self.line, col,
                 Fg::LightBlack, Style::Bold, instruction,
                 Reset,
             ),

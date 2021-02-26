@@ -89,7 +89,8 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
     let mut lexer = Lexer::new(&src);
     // Run the lexer and handle any errors
     if let Err(error) = lexer.run() {
-        println!("=> {}{}{}{}", Red, Bold, error, Reset);
+        error.display_line(src);
+        println!("{}{}{}{}", Red, Bold, error, Reset);
         return
     }
     // Show result
@@ -104,7 +105,8 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
     let mut compiler = Compiler::new(lexer.tokens);
     // Run the compiler and handle any errors
     if let Err(error) = compiler.compile() {
-        println!("=> {}{}{}{}", Red, Bold, error, Reset);
+        error.display_line(src);
+        println!("{}{}{}{}", Red, Bold, error, Reset);
         return
     }
     // Show result
@@ -117,10 +119,13 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
         println!("{}{}\nExecuting bytecode chunk in VM:{}", Yellow, Bold, Reset);
     }
     if let Err(error) = vm.run(compiler.chunk) {
-        vm.stack.clear(); // Clear the VM stack after a runtime error
-        println!("=> {}{}{}{}", Red, Bold, error, Reset);
+        error.display_line(src);
+        println!("{}{}{}{}", Red, Bold, error, Reset);
+        vm.reset();
         return
     }
+    // Reset virtual machine for next execution
+    vm.reset();
     // Display success
     let end = Instant::now();
     println!("{}{}Success!{} Done in {}{:?}{}", Green, Bold, Reset, Blue, end - start, Reset);

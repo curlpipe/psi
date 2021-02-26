@@ -20,8 +20,8 @@ impl Compiler {
     pub fn compile(&mut self) -> Result<(), Error> {
         // Start the compilation
         self.expression()?;
-        self.consume(TokenKind::EOI)?;
-        self.end_compiler();
+        let end = self.consume(TokenKind::EOI)?;
+        self.end_compiler(end);
         Ok(())
     }
 
@@ -53,7 +53,7 @@ impl Compiler {
             Ok(())
         } else {
             // There was no expression here
-            Err(Error::ExpectedExpression(current.line, current.col))
+            Err(Error::ExpectedExpression(current.line, current.col, current.len))
         }
     }
 
@@ -72,19 +72,20 @@ impl Compiler {
             TokenKind::Percent => OpCode::OpMod,
             TokenKind::Hat => OpCode::OpPow,
             _ => unreachable!(),
-        });
+        }, op_type.col, op_type.len);
         Ok(())
     }
 
     pub fn number(&mut self) -> Result<(), Error> {
         // Emit a number constant
-        self.emit_constant(match self.get_back().unwrap().kind {
+        let val = self.get_back().unwrap();
+        self.emit_constant(match val.kind {
             TokenKind::Number(float) => Value::Number(float),
             TokenKind::Nil => Value::Nil,
             TokenKind::True => Value::Boolean(true),
             TokenKind::False => Value::Boolean(false),
             _ => unreachable!(),
-        });
+        }, val.col, val.len);
         Ok(())
     }
 
@@ -100,31 +101,31 @@ impl Compiler {
         let op_type = self.get_back().unwrap();
         self.parse_precedence(Precedence::Unary)?;
         match op_type.kind {
-            TokenKind::Minus => self.emit_byte(OpCode::OpNegate),
+            TokenKind::Minus => self.emit_byte(OpCode::OpNegate, op_type.col, op_type.len),
             _ => unreachable!(),
         }
         Ok(())
     }
 
-    fn end_compiler(&mut self) {
+    fn end_compiler(&mut self, end: usize) {
         // Finalise compilation
-        self.emit_return();
+        self.emit_return(end, 0);
     }
 
-    fn emit_byte(&mut self, code: OpCode) {
+    fn emit_byte(&mut self, code: OpCode, col: usize, len: usize) {
         // Emit a byte into the chunk
-        self.chunk.write(code);
+        self.chunk.write(code, len, col);
     }
 
-    fn emit_constant(&mut self, val: Value) {
+    fn emit_constant(&mut self, val: Value, col: usize, len: usize) {
         // Create and emit a new constant
         let idx = self.chunk.add_constant(val);
-        self.emit_byte(OpCode::OpConstant(idx))
+        self.emit_byte(OpCode::OpConstant(idx), col, len)
     }
 
-    fn emit_return(&mut self) {
+    fn emit_return(&mut self, col: usize, len: usize) {
         // Emit a return operation
-        self.emit_byte(OpCode::OpReturn)
+        self.emit_byte(OpCode::OpReturn, col, len)
     }
 
     fn advance(&mut self) {
@@ -132,14 +133,14 @@ impl Compiler {
         self.ptr += 1;
     }
 
-    fn consume(&mut self, kind: TokenKind) -> Result<(), Error> {
+    fn consume(&mut self, kind: TokenKind) -> Result<usize, Error> {
         // Consume a token if present, otherwise display an error
         let current = self.get().ok_or(Error::UnexpectedEOI)?;
         if current.kind == kind {
             self.advance();
-            Ok(())
+            Ok(current.col)
         } else {
-            Err(Error::ExpectedToken(kind, current.line, current.col))
+            Err(Error::ExpectedToken(kind, current.line, current.col, current.len))
         }
     }
 
