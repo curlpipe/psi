@@ -1,0 +1,2 @@
+- Break up the !=, <= and >= into seperate bytecode
+- Spit out bytecode for execution, removes need for parsing & lexing

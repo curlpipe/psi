@@ -7,11 +7,14 @@ use std::fmt;
 pub enum TokenKind {
     // Single character tokens
     Plus, Minus, Asterisk, Slash, Percent, Hat,
-    LeftParen, RightParen,
+    LeftParen, RightParen, Exclamation,
+    // Double character tokens
+    Equals, NotEquals,
+    Greater, Less, GreaterEq, LessEq,
     // Datatypes
     Number(f64),
     // Keywords
-    True, False, Nil,
+    True, False, Nil, Not,
     // Special
     EOI,
 }
@@ -28,9 +31,17 @@ impl fmt::Display for TokenKind {
             Self::Hat => write!(fmt, "'^'"),
             Self::LeftParen => write!(fmt, "'('"),
             Self::RightParen => write!(fmt, "')'"),
+            Self::Exclamation => write!(fmt, "'!'"),
+            Self::Greater => write!(fmt, "'>'"),
+            Self::Less => write!(fmt, "'<'"),
+            Self::GreaterEq => write!(fmt, "'>='"),
+            Self::LessEq => write!(fmt, "'<='"),
+            Self::Equals => write!(fmt, "'=='"),
+            Self::NotEquals => write!(fmt, "'!='"),
             Self::True => write!(fmt, "'true'"),
             Self::False => write!(fmt, "'false'"),
             Self::Nil => write!(fmt, "'nil'"),
+            Self::Not => write!(fmt, "'not'"),
             Self::EOI => write!(fmt, "end of input"),
         }
     }
@@ -68,6 +79,7 @@ impl Lexer {
     pub fn run(&mut self) -> Result<(), Error> {
         // Run the lexer
         while let Some(c) = self.get() {
+            let (ptr, line, col) = (self.ptr, self.line, self.col);
             match c {
                 // Capture single character tokens
                 '+' => self.mk_token(TokenKind::Plus, 1),
@@ -77,6 +89,28 @@ impl Lexer {
                 '^' => self.mk_token(TokenKind::Hat, 1),
                 '(' => self.mk_token(TokenKind::LeftParen, 1),
                 ')' => self.mk_token(TokenKind::RightParen, 1),
+                '=' => if self.peek(1) == Some('=') {
+                    self.advance();
+                    self.mk_long_token(TokenKind::Equals, [2, ptr, line, col])
+                }
+                '>' => if self.peek(1) == Some('=') {
+                    self.advance();
+                    self.mk_long_token(TokenKind::GreaterEq, [2, ptr, line, col]);
+                } else {
+                    self.mk_token(TokenKind::Greater, 1)
+                }
+                '<' => if self.peek(1) == Some('=') {
+                    self.advance();
+                    self.mk_long_token(TokenKind::LessEq, [2, ptr, line, col]);
+                } else {
+                    self.mk_token(TokenKind::Less, 1)
+                }
+                '!' => if self.peek(1) == Some('=') { 
+                    self.advance();
+                    self.mk_long_token(TokenKind::NotEquals, [2, ptr, line, col])
+                } else {
+                    self.mk_token(TokenKind::Exclamation, 1)
+                }
                 '/' => if self.peek(1) == Some('/') {
                     // Single line comment
                     self.advance();
@@ -181,6 +215,7 @@ impl Lexer {
             "true" => self.mk_long_token(TokenKind::True, [4, ptr, line, col]),
             "false" => self.mk_long_token(TokenKind::False, [5, ptr, line, col]),
             "nil" => self.mk_long_token(TokenKind::Nil, [3, ptr, line, col]),
+            "not" => self.mk_long_token(TokenKind::Not, [3, ptr, line, col]),
             //_ => return Err(Error::UnexpectedCharacter(c, line, col, width::width(word.as_str())))
             _ => return Err(Error::UnexpectedCharacter(c, line, col, 1))
         }

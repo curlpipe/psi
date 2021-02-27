@@ -1,5 +1,5 @@
 // compiler.rs - For emitting bytecode given a stream of tokens
-use crate::{Chunk, Token, OpCode, Error, TokenKind, Value, Precedence, get_rule};
+use crate::{Chunk, Token, OpCode, Error, TokenKind as Tk, Value, Precedence, get_rule};
 
 pub struct Compiler {
     tokens: Vec<Token>,
@@ -20,7 +20,7 @@ impl Compiler {
     pub fn compile(&mut self) -> Result<(), Error> {
         // Start the compilation
         self.expression()?;
-        let end = self.consume(TokenKind::EOI)?;
+        let end = self.consume(Tk::EOI)?;
         self.end_compiler(end);
         Ok(())
     }
@@ -65,34 +65,52 @@ impl Compiler {
         self.parse_precedence(rule.prec.shift())?;
         // Emit the correct operation
         self.emit_byte(match op_type.kind {
-            TokenKind::Plus => OpCode::OpAdd,
-            TokenKind::Minus => OpCode::OpSub,
-            TokenKind::Asterisk => OpCode::OpMul,
-            TokenKind::Slash => OpCode::OpDiv,
-            TokenKind::Percent => OpCode::OpMod,
-            TokenKind::Hat => OpCode::OpPow,
+            Tk::Plus => OpCode::OpAdd,
+            Tk::Minus => OpCode::OpSub,
+            Tk::Asterisk => OpCode::OpMul,
+            Tk::Slash => OpCode::OpDiv,
+            Tk::Percent => OpCode::OpMod,
+            Tk::Hat => OpCode::OpPow,
+            Tk::Equals => OpCode::OpEqual,
+            Tk::Greater => OpCode::OpGreater,
+            Tk::Less => OpCode::OpLess,
+            Tk::NotEquals => OpCode::OpEqual,
+            Tk::GreaterEq => OpCode::OpLess,
+            Tk::LessEq => OpCode::OpGreater,
             _ => unreachable!(),
         }, op_type.col, op_type.len);
+        // Inverse specific operations (more efficent than direct operations)
+        if let Tk::NotEquals | Tk::GreaterEq | Tk::LessEq = op_type.kind {
+            self.emit_byte(OpCode::OpNot, op_type.col, op_type.len);
+        }
+        Ok(())
+    }
+
+    pub fn literal(&mut self) -> Result<(), Error> {
+        // Emit a literal
+        let val = self.get_back().unwrap();
+        self.emit_byte(match val.kind {
+            Tk::False => OpCode::OpFalse,
+            Tk::True => OpCode::OpTrue,
+            Tk::Nil => OpCode::OpNil,
+            _ => unreachable!(),
+        }, val.col, val.len);
         Ok(())
     }
 
     pub fn number(&mut self) -> Result<(), Error> {
         // Emit a number constant
         let val = self.get_back().unwrap();
-        self.emit_constant(match val.kind {
-            TokenKind::Number(float) => Value::Number(float),
-            TokenKind::Nil => Value::Nil,
-            TokenKind::True => Value::Boolean(true),
-            TokenKind::False => Value::Boolean(false),
-            _ => unreachable!(),
-        }, val.col, val.len);
+        if let Tk::Number(float) = val.kind {
+            self.emit_constant(Value::Number(float), val.col, val.len);
+        }
         Ok(())
     }
 
     pub fn grouping(&mut self) -> Result<(), Error> {
         // Compile a grouping operation, this is for brackets
         self.expression()?;
-        self.consume(TokenKind::RightParen)?;
+        self.consume(Tk::RightParen)?;
         Ok(())
     }
 
@@ -101,7 +119,9 @@ impl Compiler {
         let op_type = self.get_back().unwrap();
         self.parse_precedence(Precedence::Unary)?;
         match op_type.kind {
-            TokenKind::Minus => self.emit_byte(OpCode::OpNegate, op_type.col, op_type.len),
+            Tk::Minus => self.emit_byte(OpCode::OpNegate, op_type.col, op_type.len),
+            Tk::Exclamation | Tk::Not => 
+                self.emit_byte(OpCode::OpNot, op_type.col, op_type.len),
             _ => unreachable!(),
         }
         Ok(())
@@ -133,7 +153,7 @@ impl Compiler {
         self.ptr += 1;
     }
 
-    fn consume(&mut self, kind: TokenKind) -> Result<usize, Error> {
+    fn consume(&mut self, kind: Tk) -> Result<usize, Error> {
         // Consume a token if present, otherwise display an error
         let current = self.get().ok_or(Error::UnexpectedEOI)?;
         if current.kind == kind {

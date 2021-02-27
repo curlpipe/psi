@@ -12,8 +12,15 @@ pub enum OpCode {
     OpDiv,
     OpMod,
     OpPow,
-    OpReturn,
     OpNegate,
+    OpNot,
+    OpTrue,
+    OpFalse,
+    OpNil,
+    OpEqual,
+    OpGreater,
+    OpLess,
+    OpReturn,
 }
 
 pub struct Chunk {
@@ -81,8 +88,15 @@ impl fmt::Display for OpCode {
             OpCode::OpDiv => "OP_DIV",
             OpCode::OpMod => "OP_MOD",
             OpCode::OpPow => "OP_POW",
+            OpCode::OpTrue => "OP_TRUE",
+            OpCode::OpFalse => "OP_FALSE",
+            OpCode::OpNil => "OP_NIL",
             OpCode::OpReturn => "OP_RETURN",
             OpCode::OpNegate => "OP_NEGATE",
+            OpCode::OpNot => "OP_NOT",
+            OpCode::OpGreater => "OP_GREATER",
+            OpCode::OpLess => "OP_LESS",
+            OpCode::OpEqual => "OP_EQUAL",
         })
     }
 }

@@ -49,9 +49,12 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
         prefix: match kind {
             TokenKind::LeftParen => Some(Compiler::grouping),
             TokenKind::Minus => Some(Compiler::unary),
-            TokenKind::Number(_) | 
-            TokenKind::True | TokenKind::False | 
-            TokenKind::Nil => Some(Compiler::number),
+            TokenKind::False => Some(Compiler::literal),
+            TokenKind::True => Some(Compiler::literal),
+            TokenKind::Nil => Some(Compiler::literal),
+            TokenKind::Exclamation => Some(Compiler::unary),
+            TokenKind::Not => Some(Compiler::unary),
+            TokenKind::Number(_) => Some(Compiler::number),
             _ => None,
         },
         infix: match kind {
@@ -61,6 +64,12 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
             TokenKind::Slash => Some(Compiler::binary),
             TokenKind::Percent => Some(Compiler::binary),
             TokenKind::Hat => Some(Compiler::binary),
+            TokenKind::Equals => Some(Compiler::binary),
+            TokenKind::NotEquals => Some(Compiler::binary),
+            TokenKind::Greater => Some(Compiler::binary),
+            TokenKind::GreaterEq => Some(Compiler::binary),
+            TokenKind::Less => Some(Compiler::binary),
+            TokenKind::LessEq => Some(Compiler::binary),
             _ => None,
         },
         prec: match kind {
@@ -70,6 +79,12 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
             TokenKind::Asterisk => Precedence::Factor,
             TokenKind::Percent => Precedence::Factor,
             TokenKind::Hat => Precedence::Indices,
+            TokenKind::Equals => Precedence::Equality,
+            TokenKind::NotEquals => Precedence::Equality,
+            TokenKind::Greater => Precedence::Comparison,
+            TokenKind::GreaterEq => Precedence::Comparison,
+            TokenKind::Less => Precedence::Comparison,
+            TokenKind::LessEq => Precedence::Comparison,
             _ => Precedence::None,
         },
     }

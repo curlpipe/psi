@@ -40,6 +40,20 @@ impl VM {
                     self.stack.push(constant);
                     self.positions.push((col, len));
                 }
+                OpCode::OpNot => {
+                    let pop = self.stack.pop().unwrap();
+                    self.stack.push(if let Value::Boolean(b) = pop { 
+                        Value::Boolean(!b)
+                    } else { 
+                        self.stack.push(pop);
+                        return Err(Error::MismatchedTypes(
+                            self.chunk.line,
+                            self.get_col(0).1,
+                            self.get_col(0).0,
+                            "Operand must be a boolean".to_string()
+                        ))
+                    });
+                }
                 OpCode::OpNegate => if let Some(Value::Number(_)) = self.peek(0) {
                     let operand = -self.stack.pop().unwrap();
                     self.stack.push(operand);
@@ -58,6 +72,28 @@ impl VM {
                 OpCode::OpDiv => self.bin_op("/")?,
                 OpCode::OpMod => self.bin_op("%")?,
                 OpCode::OpPow => self.bin_op("^")?,
+                OpCode::OpNil => {
+                    self.stack.push(Value::Nil);
+                    self.positions.push((col, len));
+                }
+                OpCode::OpTrue => {
+                    self.stack.push(Value::Boolean(true));
+                    self.positions.push((col, len));
+                }
+                OpCode::OpFalse => {
+                    self.stack.push(Value::Boolean(false));
+                    self.positions.push((col, len));
+                }
+                OpCode::OpEqual => {
+                    let b = self.stack.pop().unwrap();
+                    let c = self.positions.pop().unwrap();
+                    let a = self.stack.pop().unwrap();
+                    let d = self.positions.pop().unwrap();
+                    self.stack.push(Value::Boolean(a == b));
+                    self.positions.push((c.1 - d.1 + c.0, d.1));
+                }
+                OpCode::OpGreater => self.bin_op(">")?,
+                OpCode::OpLess => self.bin_op("<")?,
                 OpCode::OpReturn => {
                     self.positions.pop();
                     println!("{}", self.stack.pop().unwrap());
@@ -84,9 +120,11 @@ impl VM {
                 "/" => self.stack.push(a / b),
                 "%" => self.stack.push(a % b),
                 "^" => self.stack.push(a ^ b),
+                ">" => self.stack.push(Value::Boolean(a > b)),
+                "<" => self.stack.push(Value::Boolean(a < b)),
                 _ => unreachable!(),
             }
-            self.positions.push(c);
+            self.positions.push((c.1 - d.1 + c.0, d.1));
             Ok(())
         } else {
             return Err(Error::MismatchedTypes(
