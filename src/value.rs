@@ -7,6 +7,7 @@ use std::fmt;
 pub enum Value {
     Number(f64),
     Boolean(bool),
+    String(String),
     Nil,
 }
 
@@ -14,7 +15,8 @@ impl fmt::Display for Value {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Number(f) => write!(fmt, "'{}'", round(*f, 5)),
-            Self::Boolean(f) => write!(fmt, "{}", f),
+            Self::Boolean(b) => write!(fmt, "{}", b),
+            Self::String(s) => write!(fmt, "\"{}\"", s),
             Self::Nil => write!(fmt, "nil"),
         }
     }
@@ -25,6 +27,7 @@ impl Add for Value {
     fn add(self, other: Value) -> Self::Output {
         match (self, other) {
             (Self::Number(a), Self::Number(b)) => Self::Number(a + b),
+            (Self::String(a), Self::String(b)) => Self::String(a + &b),
             _ => panic!("Impossible Operation"),
         }
     }

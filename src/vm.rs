@@ -48,8 +48,8 @@ impl VM {
                         self.stack.push(pop);
                         return Err(Error::MismatchedTypes(
                             self.chunk.line,
-                            self.get_col(0).1,
                             self.get_col(0).0,
+                            self.get_col(0).1,
                             "Operand must be a boolean".to_string()
                         ))
                     });
@@ -61,17 +61,17 @@ impl VM {
                 } else {
                     return Err(Error::MismatchedTypes(
                         self.chunk.line,
-                        self.get_col(0).1,
                         self.get_col(0).0,
+                        self.get_col(0).1,
                         "Operand must be a number".to_string()
                     ));
                 }
-                OpCode::OpAdd => self.bin_op("+")?,
-                OpCode::OpSub => self.bin_op("-")?,
-                OpCode::OpMul => self.bin_op("*")?,
-                OpCode::OpDiv => self.bin_op("/")?,
-                OpCode::OpMod => self.bin_op("%")?,
-                OpCode::OpPow => self.bin_op("^")?,
+                OpCode::OpAdd => self.bin_op("+", col)?,
+                OpCode::OpSub => self.bin_op("-", col)?,
+                OpCode::OpMul => self.bin_op("*", col)?,
+                OpCode::OpDiv => self.bin_op("/", col)?,
+                OpCode::OpMod => self.bin_op("%", col)?,
+                OpCode::OpPow => self.bin_op("^", col)?,
                 OpCode::OpNil => {
                     self.stack.push(Value::Nil);
                     self.positions.push((col, len));
@@ -90,10 +90,10 @@ impl VM {
                     let a = self.stack.pop().unwrap();
                     let d = self.positions.pop().unwrap();
                     self.stack.push(Value::Boolean(a == b));
-                    self.positions.push((c.1 - d.1 + c.0, d.1));
+                    self.positions.push((c.0 - d.0 + c.1, d.0));
                 }
-                OpCode::OpGreater => self.bin_op(">")?,
-                OpCode::OpLess => self.bin_op("<")?,
+                OpCode::OpGreater => self.bin_op(">", col)?,
+                OpCode::OpLess => self.bin_op("<", col)?,
                 OpCode::OpReturn => {
                     self.positions.pop();
                     println!("{}", self.stack.pop().unwrap());
@@ -103,8 +103,8 @@ impl VM {
         }
         Ok(())
     }
-
-    fn bin_op(&mut self, op: &str) -> Result<(), Error> {
+    
+    fn bin_op(&mut self, op: &str, loc: usize) -> Result<(), Error> {
         // Execute a binary operation
         let (a, b) = (self.peek(0), self.peek(1));
         let (c, d) = (self.get_col(0), self.get_col(1));
@@ -126,12 +126,29 @@ impl VM {
             }
             self.positions.push((c.1 - d.1 + c.0, d.1));
             Ok(())
+        } else if let (Some(&Value::String(_)), Some(&Value::String(_))) = (a, b) {
+            if op == "+" {
+                self.positions.pop();
+                let b = self.stack.pop().unwrap();
+                self.positions.pop();
+                let a = self.stack.pop().unwrap();
+                self.stack.push(a + b);
+                self.positions.push((c.1 - d.1 + c.0, d.1));
+                Ok(())
+            } else {
+                return Err(Error::ImpossibleOperation(
+                    self.chunk.line, 
+                    loc,
+                    1,
+                    op.to_string(),
+                ))
+            }
         } else {
             return Err(Error::MismatchedTypes(
                 self.chunk.line, 
-                if let Some(&Value::Number(_)) = b { c.1 } else { d.1 },
                 if let Some(&Value::Number(_)) = b { c.0 } else { d.0 },
-                "Operands must be numbers".to_string()
+                if let Some(&Value::Number(_)) = b { c.1 } else { d.1 },
+                "Operands must be either numbers or strings".to_string()
             ))
         }
     }

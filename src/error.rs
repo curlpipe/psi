@@ -22,16 +22,20 @@ pub enum Error {
     // When the user provides incorrect types in operations e.g. "-false + true"
     #[error("[line {0}:{1}] Mismatched types: {3}")]
     MismatchedTypes(usize, usize, usize, String),
+    // When the user tries to do something impossible e.g. "hi" - "hello"
+    #[error("[line {0}:{1}] Can't apply operation '{3}' to this type")]
+    ImpossibleOperation(usize, usize, usize, String),
 }
 
 impl Error {
     pub fn display_line(&self, line: &str) {
         let (col, len) = match self {
             Error::UnexpectedCharacter(_, _, c, l) => (*c, *l),
-            Error::UnexpectedEOI => (width::width(line), 1),
+            Error::UnexpectedEOI => (width::width(line) + 1, 0),
             Error::ExpectedToken(_, _, c, l) => (*c, *l),
             Error::ExpectedExpression(_, c, l) => (*c, *l),
             Error::MismatchedTypes(_, c, l, _) => (*c, *l),
+            Error::ImpossibleOperation(_, c, l, _) => (*c, *l),
         };
         let mut line: Vec<&str> = line.graphemes(true).collect();
         let before: &str = &line[0..col - 1].join("");

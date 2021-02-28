@@ -53,7 +53,7 @@ impl Chunk {
 
     pub fn display(&self) {
         // Display the chunk in text format
-        for (_, c, i) in &self.code {
+        for (c, _, i) in &self.code {
             self.disassemble_instruction(i, *c);
         }
     }

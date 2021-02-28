@@ -55,6 +55,7 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
             TokenKind::Exclamation => Some(Compiler::unary),
             TokenKind::Not => Some(Compiler::unary),
             TokenKind::Number(_) => Some(Compiler::number),
+            TokenKind::String(_) => Some(Compiler::string),
             _ => None,
         },
         infix: match kind {

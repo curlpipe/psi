@@ -3,7 +3,7 @@
 use crate::Error;
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
     // Single character tokens
     Plus, Minus, Asterisk, Slash, Percent, Hat,
@@ -12,17 +12,19 @@ pub enum TokenKind {
     Equals, NotEquals,
     Greater, Less, GreaterEq, LessEq,
     // Datatypes
-    Number(f64),
+    Number(f64), String(String),
     // Keywords
     True, False, Nil, Not,
     // Special
-    EOI,
+    EOI, Comment,
 }
 
 impl fmt::Display for TokenKind {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Number(_) => write!(fmt, "number"),
+            Self::String(_) => write!(fmt, "string"),
+            Self::Comment => write!(fmt, "comment"),
             Self::Plus => write!(fmt, "'+'"),
             Self::Minus => write!(fmt, "'-'"),
             Self::Asterisk => write!(fmt, "'*'"),
@@ -47,7 +49,7 @@ impl fmt::Display for TokenKind {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
     start: usize,
@@ -113,6 +115,7 @@ impl Lexer {
                 }
                 '/' => if self.peek(1) == Some('/') {
                     // Single line comment
+                    let mut len = 2;
                     self.advance();
                     self.advance();
                     while let Some(c) = self.get() {
@@ -122,11 +125,14 @@ impl Lexer {
                             self.col = 1;
                             break
                         } else {
+                            len += 1;
                             self.advance();
                         }
                     }
+                    self.mk_long_token(TokenKind::Comment, [len, ptr, line, col]);
                 } else if Some('*') == self.peek(1) {
                     // Mulitline comment
+                    let mut len = 2;
                     self.advance();
                     self.advance();
                     while let Some(c) = self.get() {
@@ -137,11 +143,14 @@ impl Lexer {
                         } else if c == '\n' {
                             self.line += 1;
                             self.col = 1;
+                            len += 1;
                             self.advance();
                         } else {
+                            len += 1;
                             self.advance();
                         }
                     }
+                    self.mk_long_token(TokenKind::Comment, [len + 2, ptr, line, col]);
                 } else {
                     // Just your average slash character
                     self.mk_token(TokenKind::Slash, 1);
@@ -154,6 +163,11 @@ impl Lexer {
                 // Capture numbers
                 '0'..='9' => { 
                     self.number();
+                    continue;
+                }
+                // Capture strings
+                '"' => { 
+                    self.string();
                     continue;
                 }
                 // Ignore whitespace
@@ -170,6 +184,28 @@ impl Lexer {
         // Append an EOI (end of input) token
         self.mk_token(TokenKind::EOI, 0);
         Ok(())
+    }
+
+    fn string(&mut self) {
+        // Create a string token
+        let (ptr, line, col) = (self.ptr, self.line, self.col);
+        let mut result = String::new();
+        self.advance();
+        while let Some(c) = self.get() {
+            if c == '"' {
+                self.advance();
+                break;
+            } else {
+                self.advance();
+                result.push(c);
+            }
+        }
+        // Create string token
+        let len = result.chars().count();
+        self.mk_long_token(
+            TokenKind::String(result), 
+            [len + 2, ptr, line, col]
+        );
     }
 
     fn number(&mut self) {

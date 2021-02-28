@@ -1,5 +1,15 @@
 // compiler.rs - For emitting bytecode given a stream of tokens
-use crate::{Chunk, Token, OpCode, Error, TokenKind as Tk, Value, Precedence, get_rule};
+use crate::{
+    Chunk, 
+    Token, 
+    OpCode, 
+    Error, 
+    TokenKind as Tk, 
+    Value, 
+    Precedence, 
+    get_rule, 
+    TokenKind
+};
 
 pub struct Compiler {
     tokens: Vec<Token>,
@@ -10,18 +20,25 @@ pub struct Compiler {
 impl Compiler {
     pub fn new(tokens: Vec<Token>) -> Self {
         // Create a new compiler
+        let mut ptr = 0;
+        while let Some(t) = tokens.get(ptr) {
+            if t.kind == TokenKind::Comment { ptr += 1; } else { break }
+        }
         Self {
             tokens,
             chunk: Chunk::new(1),
-            ptr: 0,
+            ptr,
         }
     }
 
     pub fn compile(&mut self) -> Result<(), Error> {
         // Start the compilation
-        self.expression()?;
-        let end = self.consume(Tk::EOI)?;
-        self.end_compiler(end);
+        if self.get().unwrap().kind != TokenKind::EOI {
+            // Token stream isn't empty
+            self.expression()?;
+            let end = self.consume(Tk::EOI)?;
+            self.end_compiler(end);
+        }
         Ok(())
     }
 
@@ -34,7 +51,7 @@ impl Compiler {
     fn parse_precedence(&mut self, precedence: Precedence) -> Result<(), Error> {
         // Parse a precedence level
         let precedence = precedence as u8;
-        self.advance();
+        self.advance()?;
         // Get the left hand side
         let current = self.get_back().unwrap();
         // Handle a prefix rule (allows for negation)
@@ -43,7 +60,7 @@ impl Compiler {
             prefix(self)?;
             // Walk down the precedence
             while precedence <= get_rule(self.get().unwrap().kind).prec as u8 {
-                self.advance();
+                self.advance()?;
                 // Handle an infix rule (allows for arithmetic operations)
                 let infix_rule = get_rule(self.get_back().unwrap().kind).infix;
                 if let Some(infix) = infix_rule {
@@ -60,7 +77,7 @@ impl Compiler {
     pub fn binary(&mut self) -> Result<(), Error> {
         // Compile a binary operation
         let op_type = self.get_back().unwrap();
-        let rule = get_rule(op_type.kind);
+        let rule = get_rule(op_type.kind.clone());
         // Move onto the lower precedence
         self.parse_precedence(rule.prec.shift())?;
         // Emit the correct operation
@@ -107,6 +124,13 @@ impl Compiler {
         Ok(())
     }
 
+    pub fn string(&mut self) -> Result<(), Error> {
+        if let Some(Token{ kind: TokenKind::String(s), col, len, .. }) = self.get_back() {
+            self.emit_constant(Value::String(s), col, len);
+        }
+        Ok(())
+    }
+
     pub fn grouping(&mut self) -> Result<(), Error> {
         // Compile a grouping operation, this is for brackets
         self.expression()?;
@@ -134,7 +158,7 @@ impl Compiler {
 
     fn emit_byte(&mut self, code: OpCode, col: usize, len: usize) {
         // Emit a byte into the chunk
-        self.chunk.write(code, len, col);
+        self.chunk.write(code, col, len);
     }
 
     fn emit_constant(&mut self, val: Value, col: usize, len: usize) {
@@ -148,16 +172,21 @@ impl Compiler {
         self.emit_byte(OpCode::OpReturn, col, len)
     }
 
-    fn advance(&mut self) {
+    fn advance(&mut self) -> Result<(), Error> {
         // Move the token focus forward
         self.ptr += 1;
+        while let Some(com) = self.get() {
+            if com.kind != TokenKind::Comment { break }
+            self.ptr += 1;
+        }
+        Ok(())
     }
 
     fn consume(&mut self, kind: Tk) -> Result<usize, Error> {
         // Consume a token if present, otherwise display an error
         let current = self.get().ok_or(Error::UnexpectedEOI)?;
         if current.kind == kind {
-            self.advance();
+            self.advance().unwrap();
             Ok(current.col)
         } else {
             Err(Error::ExpectedToken(kind, current.line, current.col, current.len))
@@ -166,12 +195,19 @@ impl Compiler {
 
     fn get(&self) -> Option<Token> {
         // Retrieve the current token focus
-        Some(*self.tokens.get(self.ptr)?)
+        Some(self.tokens.get(self.ptr)?.clone())
     }
 
     fn get_back(&self) -> Option<Token> {
         // Look back at the token before the focus
-        Some(*self.tokens.get(self.ptr - 1)?)
+        let mut target = self.tokens.get(self.ptr - 1)?;
+        let mut offset: isize = -1;
+        while let TokenKind::Comment = target.kind {
+            offset -= 1;
+            if self.ptr as isize + offset < 0 { return None; }
+            target = self.tokens.get((self.ptr as isize + offset) as usize)?;
+        }
+        Some(target.clone())
     }
 
     pub fn display(&self) {
