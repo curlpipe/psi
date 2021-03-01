@@ -85,12 +85,12 @@ impl VM {
                     self.positions.push((col, len));
                 }
                 OpCode::OpEqual => {
-                    let b = self.stack.pop().unwrap();
-                    let c = self.positions.pop().unwrap();
                     let a = self.stack.pop().unwrap();
+                    let c = self.positions.pop().unwrap();
+                    let b = self.stack.pop().unwrap();
                     let d = self.positions.pop().unwrap();
                     self.stack.push(Value::Boolean(a == b));
-                    self.positions.push((c.0 - d.0 + c.1, d.0));
+                    self.positions.push((d.0, c.0 - d.0 + c.1));
                 }
                 OpCode::OpGreater => self.bin_op(">", col)?,
                 OpCode::OpLess => self.bin_op("<", col)?,
@@ -124,7 +124,7 @@ impl VM {
                 "<" => self.stack.push(Value::Boolean(a < b)),
                 _ => unreachable!(),
             }
-            self.positions.push((c.1 - d.1 + c.0, d.1));
+            self.positions.push((d.0, c.0 - d.0 + c.1));
             Ok(())
         } else if let (Some(&Value::String(_)), Some(&Value::String(_))) = (a, b) {
             if op == "+" {
@@ -133,7 +133,7 @@ impl VM {
                 self.positions.pop();
                 let a = self.stack.pop().unwrap();
                 self.stack.push(a + b);
-                self.positions.push((c.1 - d.1 + c.0, d.1));
+                self.positions.push((d.0, c.0 - d.0 + c.1));
                 Ok(())
             } else {
                 return Err(Error::ImpossibleOperation(

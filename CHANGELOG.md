@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 29/02/2021 (Testing & panic destruction)
+### Added
+- Automated tests
+
+### Fixed
+- Fixed weird VM panic
+
+### Removed
+- Panicing
+
 ## [0.1.7] - 28/02/2021 (Strings & Bug fixing session)
 ### Added
 - Changelog
