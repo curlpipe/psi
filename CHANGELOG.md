@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.1.8] - 29/02/2021 (Testing & panic destruction)
+## [0.1.8] - 02/02/2021 (Testing & panic destruction)
 ### Added
 - Split into a library for use in embedding
 - Automated tests
