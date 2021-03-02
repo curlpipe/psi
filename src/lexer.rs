@@ -21,6 +21,7 @@ pub enum TokenKind {
 impl fmt::Display for TokenKind {
     #[cfg(not(tarpaulin_include))]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        // Define how to display token kinds
         match self {
             Self::Number(_) => write!(fmt, "number"),
             Self::String(_) => write!(fmt, "string"),
@@ -91,28 +92,33 @@ impl Lexer {
                 '^' => self.mk_token(TokenKind::Hat, 1),
                 '(' => self.mk_token(TokenKind::LeftParen, 1),
                 ')' => self.mk_token(TokenKind::RightParen, 1),
+                // Check for the == token
                 '=' => if self.peek(1) == Some('=') {
                     self.advance();
                     self.mk_long_token(TokenKind::Equals, [2, ptr, line, col])
                 }
+                // Check for the > or >= tokens
                 '>' => if self.peek(1) == Some('=') {
                     self.advance();
                     self.mk_long_token(TokenKind::GreaterEq, [2, ptr, line, col]);
                 } else {
                     self.mk_token(TokenKind::Greater, 1)
                 }
+                // Check for the < or <= tokens
                 '<' => if self.peek(1) == Some('=') {
                     self.advance();
                     self.mk_long_token(TokenKind::LessEq, [2, ptr, line, col]);
                 } else {
                     self.mk_token(TokenKind::Less, 1)
                 }
+                // Check for ! or != token
                 '!' => if self.peek(1) == Some('=') { 
                     self.advance();
                     self.mk_long_token(TokenKind::NotEquals, [2, ptr, line, col])
                 } else {
                     self.mk_token(TokenKind::Exclamation, 1)
                 }
+                // Check for a single line or multiline comment or / token
                 '/' => if self.peek(1) == Some('/') {
                     // Single line comment
                     let mut len = 2;
@@ -136,7 +142,7 @@ impl Lexer {
                     self.advance();
                     self.advance();
                     while let Some(c) = self.get() {
-                        // Keep on walkin' to the end of the line
+                        // Keep on walkin' to the end of the comment
                         if c == '*' && self.peek(1) == Some('/') {
                             self.advance();
                             break;
@@ -177,6 +183,7 @@ impl Lexer {
                     self.line += 1;
                     self.col = 1;
                 }
+                // Handle the event of an unrecognised character
                 _ => return Err(Error::UnexpectedCharacter(c, self.line, self.col, 1)),
             }
             self.advance();
@@ -192,14 +199,19 @@ impl Lexer {
         let mut result = String::new();
         self.advance();
         loop {
+            // Run through string characters
             if let Some(c) = self.get() {
+                // There are still characters
                 if c == '"' && self.peek(-1) != Some('\\') {
+                    // A quote (non-escaped)
                     self.advance();
                     break;
                 } else if c == '\n' {
+                    // A newline token (allows for newlines in strings)
                     self.line += 1;
                     self.col = 1;
                 }
+                // Push the character into the strings content
                 self.advance();
                 result.push(c);
             } else {
@@ -229,6 +241,7 @@ impl Lexer {
         if let Some('.') = self.get() {
             result.push('.');
             self.advance();
+            // Capture trailing numbers
             while let Some('0'..='9') = self.get() {
                 result.push(self.get().unwrap());
                 self.advance();
@@ -248,9 +261,11 @@ impl Lexer {
         let mut word = String::new();
         while let Some(c) = self.get() {
             if let 'a'..='z' = c {
+                // Capture all the characters
                 word.push(c);
                 self.advance();
             } else {
+                // Stop when you hit a non-alphabet character
                 break;
             }
         }

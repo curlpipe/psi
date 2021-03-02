@@ -81,6 +81,7 @@ impl Chunk {
 
 impl fmt::Display for OpCode {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        // Define how each opcode should be printed
         write!(fmt, "{}", match self {
             OpCode::OpConstant(_) => "OP_CONSTANT",
             OpCode::OpAdd => "OP_ADD",

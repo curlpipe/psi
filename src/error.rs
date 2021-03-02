@@ -29,6 +29,7 @@ pub enum Error {
 
 impl Error {
     pub fn display_line(&self, line: &str) {
+        // This is a function that creates very nice error reporting info
         let (col, len) = match self {
             Error::UnexpectedCharacter(_, _, c, l) => (*c, *l),
             Error::UnexpectedEOI(_) => (width::width(line) + 1, 0),
@@ -37,17 +38,24 @@ impl Error {
             Error::MismatchedTypes(_, c, l, _) => (*c, *l),
             Error::ImpossibleOperation(_, c, l, _) => (*c, *l),
         };
+        // Split the source code into a list of strings
         let mut line: Vec<&str> = line.graphemes(true).collect();
+        // Work out the part of the code before the problematic area
         let before: &str = &line[0..col - 1].join("");
         let (during, after);
+        // Work out if we are reporting a column out of the span of the source
         if col > line.len() {
+            // Insert a space to allow for reporting of invisible end tokens
             line.push(" ");
+            // Work out the offending part and initiate an empty after part
             during = line[col - 1..col + len].join("");
             after = "".to_string();
         } else {
+            // Grab the offending source code area and the part afterwards
             during = line[col - 1..col + len - 1].join("");
             after = line[col + len - 1..].join("");
         };
+        // Format it and print it out
         println!(
             "  {}{}{}{}{}{}{}{}{}{}", 
             Style::Bold,

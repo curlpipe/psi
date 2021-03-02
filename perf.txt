@@ -1,3 +1,8 @@
 - Break up the !=, <= and >= into seperate bytecode
 - Spit out bytecode for execution, removes need for parsing & lexing
 - Use Value::String(PTR) vs Value::String(STRING) and pointers when dealing with heap objects
+
+Debug + Verbose   : 219µs
+Release + Verbose : 145µs
+Debug             : 100µs
+Release           : 17µs

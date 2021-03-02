@@ -13,6 +13,7 @@ pub enum Value {
 
 impl fmt::Display for Value {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        // Define how to print certain values
         match self {
             Self::Number(f) => write!(fmt, "'{}'", round(*f, 5)),
             Self::Boolean(b) => write!(fmt, "{}", b),
@@ -25,10 +26,11 @@ impl fmt::Display for Value {
 impl Add for Value {
     type Output = Value;
     fn add(self, other: Value) -> Self::Output {
+        // Add two values
         match (self, other) {
             (Self::Number(a), Self::Number(b)) => Self::Number(a + b),
             (Self::String(a), Self::String(b)) => Self::String(a + &b),
-            _ => panic!("Impossible Operation"),
+            _ => unreachable!(),
         }
     }
 }
@@ -36,9 +38,10 @@ impl Add for Value {
 impl Sub for Value {
     type Output = Value;
     fn sub(self, other: Value) -> Self::Output {
+        // Subtract two values
         match (self, other) {
             (Self::Number(a), Self::Number(b)) => Self::Number(a - b),
-            _ => panic!("Impossible Operation"),
+            _ => unreachable!(),
         }
     }
 }
@@ -46,9 +49,10 @@ impl Sub for Value {
 impl Mul for Value {
     type Output = Value;
     fn mul(self, other: Value) -> Self::Output {
+        // Multiply two values
         match (self, other) {
             (Self::Number(a), Self::Number(b)) => Self::Number(a * b),
-            _ => panic!("Impossible Operation"),
+            _ => unreachable!(),
         }
     }
 }
@@ -56,9 +60,10 @@ impl Mul for Value {
 impl Div for Value {
     type Output = Value;
     fn div(self, other: Value) -> Self::Output {
+        // Divide two values
         match (self, other) {
             (Self::Number(a), Self::Number(b)) => Self::Number(a / b),
-            _ => panic!("Impossible Operation"),
+            _ => unreachable!(),
         }
     }
 }
@@ -66,21 +71,23 @@ impl Div for Value {
 impl Rem for Value {
     type Output = Value;
     fn rem(self, other: Value) -> Self::Output {
+        // Find the remainder of two values
         match (self, other) {
             (Self::Number(a), Self::Number(b)) => Self::Number(a % b),
-            _ => panic!("Impossible Operation"),
+            _ => unreachable!(),
         }
     }
 }
 
+// Actually acts as a power operator, not a bitxor
+// We just want to trick rust into using it like this, for code clarity
 impl BitXor for Value {
     type Output = Value;
     fn bitxor(self, other: Value) -> Self::Output {
-        // Actually acts as a power operator, not a bitxor
-        // We just want to trick rust into using it like this, for code clarity
+        // Exponentiate two values
         match (self, other) {
             (Self::Number(a), Self::Number(b)) => Self::Number(a.powf(b)),
-            _ => panic!("Impossible Operation"),
+            _ => unreachable!(),
         }
     }
 }
@@ -88,9 +95,10 @@ impl BitXor for Value {
 impl Neg for Value {
     type Output = Value;
     fn neg(self) -> Self::Output {
+        // Negate a value
         match self {
             Self::Number(num) => Self::Number(-num),
-            _ => panic!("Impossible Operation"),
+            _ => unreachable!(),
         }
     }
 }

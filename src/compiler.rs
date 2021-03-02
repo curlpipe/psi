@@ -21,6 +21,7 @@ impl Compiler {
     pub fn new(tokens: Vec<Token>) -> Self {
         // Create a new compiler
         let mut ptr = 0;
+        // If the token stream begins with comments, jump over them
         while let Some(t) = tokens.get(ptr) {
             if t.kind == TokenKind::Comment { ptr += 1; } else { break }
         }
@@ -125,7 +126,8 @@ impl Compiler {
     }
 
     pub fn string(&mut self) -> Result<(), Error> {
-        if let Some(Token{ kind: TokenKind::String(s), col, len, .. }) = self.get_back() {
+        // Emit a string constant
+        if let Some(Token{ kind: Tk::String(s), col, len, .. }) = self.get_back() {
             self.emit_constant(Value::String(s), col, len);
         }
         Ok(())

@@ -46,7 +46,7 @@ dependencies = [
 
 [[package]]
 name = "psibyte"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "lliw",
  "round",
