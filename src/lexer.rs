@@ -1,5 +1,4 @@
 // lexer.rs - For turning streams of characters into tokens
-//use unicode_width::UnicodeWidthStr as width;
 use crate::Error;
 use std::fmt;
 
@@ -20,6 +19,7 @@ pub enum TokenKind {
 }
 
 impl fmt::Display for TokenKind {
+    #[cfg(not(tarpaulin_include))]
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Number(_) => write!(fmt, "number"),
@@ -52,7 +52,7 @@ impl fmt::Display for TokenKind {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
-    start: usize,
+    pub start: usize,
     pub len: usize,
     pub line: usize,
     pub col: usize,
@@ -167,7 +167,7 @@ impl Lexer {
                 }
                 // Capture strings
                 '"' => { 
-                    self.string();
+                    self.string()?;
                     continue;
                 }
                 // Ignore whitespace
@@ -186,18 +186,25 @@ impl Lexer {
         Ok(())
     }
 
-    fn string(&mut self) {
+    fn string(&mut self) -> Result<(), Error> {
         // Create a string token
         let (ptr, line, col) = (self.ptr, self.line, self.col);
         let mut result = String::new();
         self.advance();
-        while let Some(c) = self.get() {
-            if c == '"' {
-                self.advance();
-                break;
-            } else {
+        loop {
+            if let Some(c) = self.get() {
+                if c == '"' && self.peek(-1) != Some('\\') {
+                    self.advance();
+                    break;
+                } else if c == '\n' {
+                    self.line += 1;
+                    self.col = 1;
+                }
                 self.advance();
                 result.push(c);
+            } else {
+                // Unterminated string!
+                return Err(Error::UnexpectedEOI("Unterminated string".to_string()));
             }
         }
         // Create string token
@@ -206,6 +213,7 @@ impl Lexer {
             TokenKind::String(result), 
             [len + 2, ptr, line, col]
         );
+        Ok(())
     }
 
     fn number(&mut self) {

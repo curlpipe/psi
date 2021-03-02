@@ -11,9 +11,7 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
-clap = { version = "2.33.3", default-features = false }
 round = "0.1.0"
-scanln = "0.1.1"
 thiserror = "1.0.24"
 lliw = "0.1.1"
 unicode-width = "0.1.8"

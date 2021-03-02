@@ -1,0 +1,11 @@
+[package]
+name = "psi-example"
+version = "0.1.0"
+authors = ["curlpipe <11898833+curlpipe@users.noreply.github.com>"]
+edition = "2018"
+
+[dependencies]
+psibyte = { version = "0", path = "../" }
+clap = { version = "2.33.3", default-features = false }
+lliw = "0.1.1"
+scanln = "0.1.1"

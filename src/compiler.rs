@@ -184,7 +184,7 @@ impl Compiler {
 
     fn consume(&mut self, kind: Tk) -> Result<usize, Error> {
         // Consume a token if present, otherwise display an error
-        let current = self.get().ok_or(Error::UnexpectedEOI)?;
+        let current = self.get().ok_or(Error::UnexpectedEOI(format!("Expected {}", kind)))?;
         if current.kind == kind {
             self.advance().unwrap();
             Ok(current.col)

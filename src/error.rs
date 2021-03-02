@@ -5,14 +5,14 @@ use thiserror::Error as ThisError;
 use lliw::{Fg, Style, Reset};
 use crate::TokenKind;
 
-#[derive(ThisError, Debug)]
+#[derive(ThisError, Debug, PartialEq)]
 pub enum Error {
     // When the lexer hits a character it doesn't know, e.g. a unicode char
     #[error("[line {1}:{2}] Unexpected character: '{0}'")]
     UnexpectedCharacter(char, usize, usize, usize),
     // When the lexer hits the EOI while collecting a token e.g. unterminated string
-    #[error("Unexpected end of input")]
-    UnexpectedEOI,
+    #[error("Unexpected end of input: {0}")]
+    UnexpectedEOI(String),
     // When the consume method misses a token e.g. missing end bracket
     #[error("[line {1}:{2}] Expected {0}")]
     ExpectedToken(TokenKind, usize, usize, usize),
@@ -31,7 +31,7 @@ impl Error {
     pub fn display_line(&self, line: &str) {
         let (col, len) = match self {
             Error::UnexpectedCharacter(_, _, c, l) => (*c, *l),
-            Error::UnexpectedEOI => (width::width(line) + 1, 0),
+            Error::UnexpectedEOI(_) => (width::width(line) + 1, 0),
             Error::ExpectedToken(_, _, c, l) => (*c, *l),
             Error::ExpectedExpression(_, c, l) => (*c, *l),
             Error::MismatchedTypes(_, c, l, _) => (*c, *l),

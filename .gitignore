@@ -1,3 +1,4 @@
 /target
 *.swp
 */*.swp
+example/target

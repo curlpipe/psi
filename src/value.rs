@@ -3,7 +3,7 @@ use std::ops::{Add, Sub, Mul, Div, Neg, Rem, BitXor};
 use round::round;
 use std::fmt;
 
-#[derive(Clone, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum Value {
     Number(f64),
     Boolean(bool),

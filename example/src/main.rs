@@ -1,31 +1,15 @@
-// Psibyte - A bytecode implementation of the PSI language
-mod precedence;
-mod compiler;
-mod chunk;
-mod error;
-mod lexer;
-mod value;
-mod vm;
-
+use psibyte::{Lexer, Compiler, VM, VERSION};
 use lliw::Fg::{Red, Yellow, Green, Blue};
-use precedence::{Precedence, get_rule};
-use lexer::{Token, Lexer, TokenKind};
-use lliw::Style::{Bold, NoBold};
-use chunk::{OpCode, Chunk};
-use compiler::Compiler;
+use lliw::{Style::{Bold, NoBold}, Reset};
 use std::time::Instant;
 use clap::{App, Arg};
 use scanln::scanln;
-use error::Error;
-use value::Value;
-use lliw::Reset;
 use std::fs;
-use vm::VM;
 
 fn main() {
     // Command line argument parser
     let args = App::new("PSI")
-       .version(env!("CARGO_PKG_VERSION"))
+       .version(VERSION)
        .about("A bytecode interpreter implementation for the PSI language")
        .arg(Arg::with_name("verbose")
            .short("v")
@@ -70,7 +54,7 @@ fn repl(verbose: bool) {
     println!(
         "{}Ψ PSI Interpreter {}{}{}{}", 
         Bold, NoBold, 
-        Blue, env!("CARGO_PKG_VERSION"), Reset
+        Blue, VERSION, Reset
     );
     loop {
         // Prompt user for input

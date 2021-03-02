@@ -3,7 +3,7 @@ use lliw::{Fg, Style, Reset};
 use crate::Value;
 use std::fmt;
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum OpCode {
     OpConstant(u16),
     OpAdd,
@@ -23,6 +23,7 @@ pub enum OpCode {
     OpReturn,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Chunk {
     pub code: Vec<(usize, usize, OpCode)>,
     pub constants: Vec<Value>,

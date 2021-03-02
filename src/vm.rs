@@ -1,12 +1,14 @@
 // vm.rs - Stack-based Bytecode Virtual Machine
 use crate::{Chunk, Error, OpCode, Value};
+use round::round;
 
 const STACK_SIZE: usize = 256;
 
 #[allow(clippy::upper_case_acronyms)]
 pub struct VM {
     pub stack: Vec<Value>,
-    positions: Vec<(usize, usize)>,
+    pub positions: Vec<(usize, usize)>,
+    pub result: Option<Value>,
     chunk: Chunk,
     verbose: bool,
 }
@@ -18,6 +20,7 @@ impl VM {
             stack: Vec::with_capacity(STACK_SIZE),
             positions: Vec::with_capacity(STACK_SIZE),
             chunk: Chunk::new(0),
+            result: None,
             verbose,
         }
     }
@@ -96,7 +99,14 @@ impl VM {
                 OpCode::OpLess => self.bin_op("<", col)?,
                 OpCode::OpReturn => {
                     self.positions.pop();
-                    println!("{}", self.stack.pop().unwrap());
+                    let popped = self.stack.pop();
+                    let result = if let Some(Value::Number(f)) = popped {
+                        Value::Number(round(f, 5))
+                    } else {
+                        popped.unwrap()
+                    };
+                    println!("{}", result);
+                    self.result = Some(result);
                     break
                 }
             }
