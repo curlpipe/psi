@@ -86,7 +86,7 @@ PSI is a scripting language with the following aims:
    
    ```sh
    git clone https://github.com/curlpipe/psi.git
-   cd psi/example
+   cd psi/compiler
    ```
 3. Build from source (use a nightly compiler for potential performance improvements)
    
@@ -96,7 +96,7 @@ PSI is a scripting language with the following aims:
 4. Add the executable
 
    ```sh
-   mv target/release/psibyte /usr/bin/psi
+   mv target/release/psi_compiler /usr/bin/psi
    ```
 
 <!-- USAGE EXAMPLES -->

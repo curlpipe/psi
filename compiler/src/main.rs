@@ -1,4 +1,4 @@
-use psibyte::{Lexer, Compiler, VM, VERSION};
+use psi_lang::{Lexer, Compiler, VM, VERSION};
 use lliw::Fg::{Red, Yellow, Green, Blue};
 use lliw::{Style::{Bold, NoBold}, Reset};
 use std::time::Instant;

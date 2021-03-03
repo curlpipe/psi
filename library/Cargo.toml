@@ -1,5 +1,5 @@
 [package]
-name = "psibyte"
+name = "psi-lang"
 version = "0.1.9"
 authors = ["curlpipe <11898833+curlpipe@users.noreply.github.com>"]
 edition = "2018"

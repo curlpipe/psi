@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.9] - 03/02/2021 (Variables)
+### Added
+- Readme
+- License
+- Better code commenting
+
+### Fixed
+- Used clippy to improve code performance and quality
+
 ## [0.1.8] - 02/02/2021 (Testing & panic destruction)
 ### Added
 - Split into a library for use in embedding

@@ -1,4 +1,6 @@
-/target
+library/target
+compiler/target
 *.swp
 */*.swp
 example/target
+*/Cargo.lock

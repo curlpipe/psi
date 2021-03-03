@@ -1,5 +1,5 @@
 [package]
-name = "psi-example"
+name = "psi-compiler"
 version = "0.1.0"
 authors = ["curlpipe <11898833+curlpipe@users.noreply.github.com>"]
 edition = "2018"
@@ -11,7 +11,7 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
-psibyte = { version = "0", path = "../" }
+psi-lang = { version = "0", path = "../library" }
 clap = { version = "2.33.3", default-features = false }
 lliw = "0.1.1"
 scanln = "0.1.1"
