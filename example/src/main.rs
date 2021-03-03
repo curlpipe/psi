@@ -6,6 +6,10 @@ use clap::{App, Arg};
 use scanln::scanln;
 use std::fs;
 
+macro_rules! vprintln {
+    ($v:expr, $fmt:literal, $( $arg:expr ),*) => { if $v { println!($fmt, $( $arg ),*) } };
+}
+
 fn main() {
     // Command line argument parser
     let args = App::new("PSI")
@@ -67,9 +71,7 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
     // Start timer
     let start = Instant::now();
     // Initiate a lexer
-    if verbose { 
-        println!("{}{}Lexing from character stream to token stream...{}", Yellow, Bold, Reset);
-    }
+    vprintln!(verbose, "{}{}Lexing from char stream to token stream{}", Yellow, Bold, Reset);
     let mut lexer = Lexer::new(&src);
     // Run the lexer and handle any errors
     if let Err(error) = lexer.run() {
@@ -78,14 +80,10 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
         return
     }
     // Show result
-    if verbose { 
-        println!("\n{}{}Success!{} Token stream:", Green, Bold, Reset); 
-        lexer.display();
-    }
+    vprintln!(verbose, "\n{}{}Success!{} Token stream:", Green, Bold, Reset); 
+    if verbose { lexer.display(); }
     // Initiate compiler
-    if verbose { 
-        println!("\n{}{}Compiling from token stream to bytecode...{}", Yellow, Bold, Reset); 
-    }
+    vprintln!(verbose, "\n{}{}Compiling from token stream to bytecode{}", Yellow, Bold, Reset); 
     let mut compiler = Compiler::new(lexer.tokens);
     // Run the compiler and handle any errors
     if let Err(error) = compiler.compile() {
@@ -94,14 +92,10 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
         return
     }
     // Show result
-    if verbose {
-        println!("\n{}{}Success!{} Disassembled bytecode:", Green, Bold, Reset);
-        compiler.display();
-    }
+    vprintln!(verbose, "\n{}{}Success!{} Disassembled bytecode:", Green, Bold, Reset);
+    if verbose { compiler.display(); }
     // Run virtual machine
-    if verbose {
-        println!("{}{}\nExecuting bytecode chunk in VM:{}", Yellow, Bold, Reset);
-    }
+    vprintln!(verbose, "{}{}\nExecuting bytecode chunk in VM:{}", Yellow, Bold, Reset);
     if let Err(error) = vm.run(compiler.chunk) {
         error.display_line(src);
         println!("{}{}{}{}", Red, Bold, error, Reset);

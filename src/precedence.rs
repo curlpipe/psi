@@ -1,9 +1,11 @@
 // precedence.rs - utilities for handling precedence within the language
 use crate::{Compiler, TokenKind, Error};
 
+pub type CompilerFn<'a> = Option<fn(&'a mut Compiler) -> Result<(), Error>>;
+
 pub struct ParseRule<'a> {
-    pub prefix: Option<fn(&'a mut Compiler) -> Result<(), Error>>,
-    pub infix: Option<fn(&'a mut Compiler) -> Result<(), Error>>,
+    pub prefix: CompilerFn<'a>,
+    pub infix: CompilerFn<'a>,
     pub prec: Precedence,
 }
 

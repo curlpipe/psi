@@ -1,4 +1,5 @@
 // Test.rs - Test suite for the bytecode implementation of psi
+#![allow(clippy::approx_constant)]
 #[cfg(test)]
 use psibyte::{Lexer, TokenKind::*, Token, Error, Compiler, Chunk, OpCode::*, Value, VM};
 
@@ -18,7 +19,7 @@ use psibyte::{Lexer, TokenKind::*, Token, Error, Compiler, Chunk, OpCode::*, Val
 fn lexer() {
     // Test the Lexer at arithmetic
     let mut lexer = Lexer::new("1 + 1 - 45 / 21 * 534 ^ (3897 % 4)");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     assert_eq!(lexer.tokens, [
         Token { kind: Number(1.0), start: 0, len: 1, line: 1, col: 1 }, 
         Token { kind: Plus, start: 2, len: 1, line: 1, col: 3 }, 
@@ -39,7 +40,7 @@ fn lexer() {
     ]);
     // Test the lexer at other operators & datastructures & comments
     let mut lexer = Lexer::new("true == \"Hello World\" != false // Hello\n");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     assert_eq!(lexer.tokens, [
         Token { kind: True, start: 0, len: 4, line: 1, col: 1 }, 
         Token { kind: Equals, start: 5, len: 2, line: 1, col: 6 }, 
@@ -51,7 +52,7 @@ fn lexer() {
     ]);
     // Test the lexer at more operators & datastructures & comments
     let mut lexer = Lexer::new("4 > 3 < 2 >= 5 <= 3 == !true");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     assert_eq!(lexer.tokens, [
         Token { kind: Number(4.0), start: 0, len: 1, line: 1, col: 1 }, 
         Token { kind: Greater, start: 2, len: 1, line: 1, col: 3 }, 
@@ -69,7 +70,7 @@ fn lexer() {
     ]);
     // Test the lexer at unicode & newlines & multiline comments
     let mut lexer = Lexer::new("\"H 你好 hi\"\n\n/* hello\nthere*/\t\n");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     assert_eq!(lexer.tokens, [
         Token { kind: String("H 你好 hi".to_string()), start: 0, len: 9, line: 1, col: 1 },
         Token { kind: Comment, start: 11, len: 16, line: 3, col: 2 }, 
@@ -77,7 +78,7 @@ fn lexer() {
     ]);
     // Multiline strings & floats & unary operations (with nil)
     let mut lexer = Lexer::new("\"hello\nworld\" == 3.141 != not nil");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     assert_eq!(lexer.tokens, [
         Token { kind: String("hello\nworld".to_string()), start: 0, len: 13, line: 1, col: 1 }, 
         Token { kind: Equals, start: 14, len: 2, line: 2, col: 9 }, 
@@ -94,7 +95,7 @@ fn lexer() {
     assert_eq!(lexer.run(), Err(Error::UnexpectedCharacter('n', 1, 1, 1)));
     // Displaying of tokens
     let mut lexer = Lexer::new("2 + 3");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     lexer.display();
 }
 
@@ -115,9 +116,9 @@ fn lexer() {
 fn compiler() {
     // Test arithmetic precedence and operations
     let mut lexer = Lexer::new("(1 + 2) / 3 - 4 * 5 % 6 ^ 7");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     assert_eq!(compiler.chunk, Chunk {
         code: vec![
             (2, 1, OpConstant(0)), (6, 1, OpConstant(1)), (4, 1, OpAdd), 
@@ -136,9 +137,9 @@ fn compiler() {
     });
     // Test comparison
     let mut lexer = Lexer::new("(4 + 23 > 324 == 32 <= 1) != (5 - 3 < 3 ^ 5 == 3 >= 4)");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     assert_eq!(compiler.chunk, Chunk {
         code: vec![
             (2, 1, OpConstant(0)), (6, 2, OpConstant(1)), (4, 1, OpAdd), 
@@ -164,9 +165,9 @@ fn compiler() {
     });
     // Test equality
     let mut lexer = Lexer::new("(true == nil) != (\"Hello\" == 4 + 6 ^ 2)");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     assert_eq!(compiler.chunk, Chunk {
         code: vec![
             (2, 4, OpTrue), (10, 3, OpNil), (7, 2, OpEqual), 
@@ -183,9 +184,9 @@ fn compiler() {
     });
     // Test unary operations
     let mut lexer = Lexer::new("!true == not true");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     assert_eq!(compiler.chunk, Chunk {
         code: vec![
             (2, 4, OpTrue), (1, 1, OpNot), 
@@ -197,9 +198,9 @@ fn compiler() {
     });
     // Test comment jumping
     let mut lexer = Lexer::new("/* haha */ 1 + /* hello */ 2 / 37 // Lol");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     assert_eq!(compiler.chunk, Chunk {
         code: vec![
             (12, 1, OpConstant(0)), (28, 1, OpConstant(1)), 
@@ -214,9 +215,9 @@ fn compiler() {
     });
     // Test empty comment lines
     let mut lexer = Lexer::new("// Lol");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     assert_eq!(compiler.chunk, Chunk {
         code: vec![],
         constants: vec![],
@@ -224,17 +225,17 @@ fn compiler() {
     });
     // Test displaying
     let mut lexer = Lexer::new("1 + 2 / 3 - 4 * 5 % 6 ^ 7");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     compiler.display();
     // Test errors
     let mut lexer = Lexer::new("1 + +");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
     assert_eq!(compiler.compile(), Err(Error::ExpectedExpression(1, 5, 1)));
     let mut lexer = Lexer::new("(1 + 3");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
     assert_eq!(compiler.compile(), Err(Error::ExpectedToken(RightParen, 1, 7, 0)));
 }
@@ -253,82 +254,82 @@ fn compiler() {
 fn virtual_machine() {
     // Test arithmetic & negation
     let mut lexer = Lexer::new("(1 + 2) / 3 - 4 * -5 % 6 ^ -7");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(true);
-    vm.run(compiler.chunk);
+    assert!(vm.run(compiler.chunk).is_ok());
     assert_eq!(vm.result, Some(Value::Number(1.0)));
     // Test string concatenation
     let mut lexer = Lexer::new("\"Hello\" + \" World!\"");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(true);
-    vm.run(compiler.chunk);
+    assert!(vm.run(compiler.chunk).is_ok());
     assert_eq!(vm.result, Some(Value::String("Hello World!".to_string())));
     // Test unary & equality
     let mut lexer = Lexer::new("not true == nil");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(false);
-    vm.run(compiler.chunk);
+    assert!(vm.run(compiler.chunk).is_ok());
     assert_eq!(vm.result, Some(Value::Boolean(false)));
     let mut lexer = Lexer::new("(1 != 2) == !false");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(true);
-    vm.run(compiler.chunk);
+    assert!(vm.run(compiler.chunk).is_ok());
     assert_eq!(vm.result, Some(Value::Boolean(true)));
     // Test comparison
     let mut lexer = Lexer::new("(2 < 5) == (4 > 6)");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(false);
-    vm.run(compiler.chunk);
+    assert!(vm.run(compiler.chunk).is_ok());
     assert_eq!(vm.result, Some(Value::Boolean(false)));
     let mut lexer = Lexer::new("(2 <= 2) == (6 >= 4)");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(true);
-    vm.run(compiler.chunk);
+    assert!(vm.run(compiler.chunk).is_ok());
     assert_eq!(vm.result, Some(Value::Boolean(true)));
     // Test errors
     let mut lexer = Lexer::new("!3 - 3");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(true);
     assert_eq!(
         vm.run(compiler.chunk), 
         Err(Error::MismatchedTypes(1, 2, 1, "Operand must be a boolean".to_string()))
     );
     let mut lexer = Lexer::new("3 - -true");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(true);
     assert_eq!(
         vm.run(compiler.chunk), 
         Err(Error::MismatchedTypes(1, 6, 4, "Operand must be a number".to_string()))
     );
     let mut lexer = Lexer::new("nil + nil");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(true);
     assert_eq!(
         vm.run(compiler.chunk), 
         Err(Error::MismatchedTypes(1, 1, 3, "Operands must be either numbers or strings".to_string()))
     );
     let mut lexer = Lexer::new("\"Impossible\" - \"Operation\"");
-    lexer.run();
+    assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
-    compiler.compile();
+    assert!(compiler.compile().is_ok());
     let mut vm = VM::new(true);
     assert_eq!(
         vm.run(compiler.chunk), 

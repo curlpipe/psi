@@ -163,7 +163,7 @@ impl VM {
                 Ok(())
             } else {
                 // Provided an impossible operation on two strings
-                return Err(Error::ImpossibleOperation(
+                Err(Error::ImpossibleOperation(
                     self.chunk.line, 
                     loc,
                     1,
@@ -172,7 +172,7 @@ impl VM {
             }
         } else {
             // Incorrect types provided
-            return Err(Error::MismatchedTypes(
+            Err(Error::MismatchedTypes(
                 self.chunk.line, 
                 if let Some(&Value::Number(_)) = b { c.0 } else { d.0 },
                 if let Some(&Value::Number(_)) = b { c.1 } else { d.1 },

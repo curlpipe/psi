@@ -2,6 +2,7 @@
 use crate::Error;
 use std::fmt;
 
+#[allow(clippy::upper_case_acronyms)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
     // Single character tokens
