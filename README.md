@@ -5,7 +5,7 @@
     <h1 align="center">Ψ</h1>
   </a>
 
-  <h2 align="center">PSI</h2>
+  <h3 align="center">PSI</h3>
 
   <p align="center">
      A minimal, sensible, scripting language for configuring, extending and controlling your application 
