@@ -1,0 +1,66 @@
+use psi_lang::{Compiler, Lexer, VM, Error, Value};
+use lliw::{Style::Bold, Fg::{Green, Blue}, Reset};
+use std::time::{Instant, Duration};
+use std::io::{self, Write};
+use std::thread::sleep;
+use scanln::scanln;
+
+//const DELAY: u64 = 30;
+const DELAY: u64 = 1;
+
+macro_rules! sprintln {
+    ($fmt:literal, $($args:expr),*) => {
+        for c in format!($fmt, $( $args )*).chars() {
+            print!("{}", c);
+            io::stdout().flush().expect("Failed to flush stdout");
+            sleep(Duration::from_millis(DELAY));
+        }
+        println!("");
+    };
+    ($fmt:literal) => {
+        for c in $fmt.chars() {
+            print!("{}", c);
+            io::stdout().flush().expect("Failed to flush stdout");
+            sleep(Duration::from_millis(DELAY));
+        }
+        println!("");
+    };
+}
+
+fn run(check: Value) -> Result<(), Error> {
+    let src = scanln!("> ");
+    if src != check {
+        sprintln!("Please try typing in ", value);
+        run(check)
+    }
+    let start = Instant::now();
+    let mut lexer = Lexer::new(&src);
+    lexer.run()?;
+    let mut compiler = Compiler::new(lexer.tokens);
+    compiler.compile()?;
+    let mut vm = VM::new(false);
+    vm.run(compiler.chunk)?;
+    let end = Instant::now();
+    println!("{}{}Success!{} Done in {}{:?}{}", Green, Bold, Reset, Blue, end - start, Reset);
+    if vm.result == Some(value) {
+        Ok(())
+    } else {
+    }
+}
+
+pub fn learn() {
+    sprintln!("Hey! Thanks for trying out psi!");
+    let name = scanln!("What can I call you? ");
+    sprintln!("\nWelcome to the interactive learning environment, {}", name);
+    sprintln!("It's nice to meet you.");
+    sprintln!("\nLet's start off with performing some arithmetic!");
+    sprintln!("\nHere is a repl (read-evaluate-print-loop)");
+    sprintln!("> ");
+    sprintln!("\nThis is where you execute code");
+    sprintln!("\nYou can type out your code and then press enter to execute it");
+    sprintln!("\nLet's start out with a simple `1 + 1`");
+    while run().is_err() {
+        sprintln!("Oops! That's not quite right, please try again");
+    }
+    sprintln!("Great work! Notice the result comes back as 2, pretty simple");
+}

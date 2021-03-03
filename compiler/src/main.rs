@@ -1,3 +1,5 @@
+mod learn;
+
 use psi_lang::{Lexer, Compiler, VM, VERSION};
 use lliw::Fg::{Red, Yellow, Green, Blue};
 use lliw::{Style::{Bold, NoBold}, Reset};
@@ -23,12 +25,23 @@ fn main() {
        .arg(Arg::with_name("file")
            .allow_hyphen_values(false)
            .required_unless("repl")
+           .conflicts_with("repl")
+           .conflicts_with("learn")
            .takes_value(true))
        .arg(Arg::with_name("repl")
            .long("repl")
            .short("r")
            .help("Access a read-evaluate-print-loop for trying out the language")
            .required_unless("file")
+           .conflicts_with("file")
+           .conflicts_with("learn")
+           .takes_value(false))
+       .arg(Arg::with_name("learn")
+           .long("learn")
+           .short("l")
+           .help("A interactive tour of the PSI programming language to help you learn it")
+           .conflicts_with("repl")
+           .conflicts_with("file")
            .takes_value(false))
        .get_matches(); 
 
@@ -38,6 +51,8 @@ fn main() {
         repl(verbose)
     } else if let Some(path) = args.value_of("file") {
         file(path, verbose)
+    } else if args.is_present("learn") {
+        learn::learn()
     }
 }
 
