@@ -4,3 +4,4 @@ compiler/target
 */*.swp
 example/target
 */Cargo.lock
+*.html

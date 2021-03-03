@@ -1,7 +1,7 @@
 // Test.rs - Test suite for the bytecode implementation of psi
 #![allow(clippy::approx_constant)]
 #[cfg(test)]
-use psibyte::{Lexer, TokenKind::*, Token, Error, Compiler, Chunk, OpCode::*, Value, VM};
+use psi_lang::{Lexer, TokenKind::*, Token, Error, Compiler, Chunk, OpCode::*, Value, VM};
 
 /*
     This is a test for the Lexer

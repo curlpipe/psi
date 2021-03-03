@@ -1,14 +1,16 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.1.9] - 03/02/2021 (Variables)
+## [0.1.9] - 03/02/2021 (Infrastructure)
 ### Added
 - Readme
 - License
 - Better code commenting
+- Added interactive learning mode
 
 ### Fixed
 - Used clippy to improve code performance and quality
+- Fixed problems with negation
 
 ## [0.1.8] - 02/02/2021 (Testing & panic destruction)
 ### Added

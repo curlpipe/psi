@@ -63,6 +63,7 @@ impl VM {
                 OpCode::OpNegate => if let Some(Value::Number(_)) = self.peek(0) {
                     // Negate a number
                     let operand = -self.stack.pop().unwrap();
+                    self.positions.pop();
                     self.stack.push(operand);
                     self.positions.push((col, len));
                 } else {
