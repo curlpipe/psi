@@ -97,6 +97,8 @@ impl Lexer {
                 '=' => if self.peek(1) == Some('=') {
                     self.advance();
                     self.mk_long_token(TokenKind::Equals, [2, ptr, line, col])
+                } else {
+                    return Err(Error::UnexpectedCharacter(c, self.line, self.col, 1))
                 }
                 // Check for the > or >= tokens
                 '>' => if self.peek(1) == Some('=') {

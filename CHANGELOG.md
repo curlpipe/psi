@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Used clippy to improve code performance and quality
 - Fixed problems with negation
+- Fixed `=` error
 
 ## [0.1.8] - 02/02/2021 (Testing & panic destruction)
 ### Added
