@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 05/02/2021 (Variables)
+### Added
+- Added temporary print statement
+- Allowed for multiple lines in a file
+- Global variables
+
 ## [0.1.9] - 03/02/2021 (Infrastructure)
 ### Added
 - Readme

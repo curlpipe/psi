@@ -25,10 +25,16 @@ pub enum Error {
     // When the user tries to do something impossible e.g. "hi" - "hello"
     #[error("[line {0}:{1}] Can't apply operation '{3}' to this type")]
     ImpossibleOperation(usize, usize, usize, String),
+    // When the user specifies a non-existant e.g. `prins`
+    #[error("[line {0}:{1}] Undefined variable '{3}'")]
+    UndefinedVariable(usize, usize, usize, String),
+    // When the user specifies a non-existant e.g. `a * b = 3`
+    #[error("[line {0}:{1}] Invalid assignment target")]
+    InvalidAssignmentTarget(usize, usize, usize),
 }
 
 impl Error {
-    pub fn display_line(&self, line: &str) {
+    pub fn display_line(&self, line: &str, repl: bool) {
         // This is a function that creates very nice error reporting info
         let (col, len) = match self {
             Error::UnexpectedCharacter(_, _, c, l) => (*c, *l),
@@ -37,6 +43,8 @@ impl Error {
             Error::ExpectedExpression(_, c, l) => (*c, *l),
             Error::MismatchedTypes(_, c, l, _) => (*c, *l),
             Error::ImpossibleOperation(_, c, l, _) => (*c, *l),
+            Error::UndefinedVariable(_, c, l, _) => (*c, *l),
+            Error::InvalidAssignmentTarget(_, c, l) => (*c, *l),
         };
         // Split the source code into a list of strings
         let mut line: Vec<&str> = line.graphemes(true).collect();
@@ -57,7 +65,8 @@ impl Error {
         };
         // Format it and print it out
         println!(
-            "  {}{}{}{}{}{}{}{}{}{}", 
+            "{}{}{}{}{}{}{}{}{}{}{}", 
+            if repl { "  " } else { "" },
             Style::Bold,
             Fg::Green, before, Fg::Red,
             Style::Underline, 

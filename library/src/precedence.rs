@@ -1,7 +1,7 @@
 // precedence.rs - utilities for handling precedence within the language
 use crate::{Compiler, TokenKind, Error};
 
-pub type CompilerFn<'a> = Option<fn(&'a mut Compiler) -> Result<(), Error>>;
+pub type CompilerFn<'a> = Option<fn(&'a mut Compiler, bool) -> Result<(), Error>>;
 
 pub struct ParseRule<'a> {
     pub prefix: CompilerFn<'a>,
@@ -58,6 +58,7 @@ pub fn get_rule<'a>(kind: TokenKind) -> ParseRule<'a> {
             TokenKind::Not => Some(Compiler::unary),
             TokenKind::Number(_) => Some(Compiler::number),
             TokenKind::String(_) => Some(Compiler::string),
+            TokenKind::Identifier(_) => Some(Compiler::variable),
             _ => None,
         },
         infix: match kind {

@@ -18,7 +18,7 @@ use psi_lang::{Lexer, TokenKind::*, Token, Error, Compiler, Chunk, OpCode::*, Va
 #[test]
 fn lexer() {
     // Test the Lexer at arithmetic
-    let mut lexer = Lexer::new("1 + 1 - 45 / 21 * 534 ^ (3897 % 4)");
+    let mut lexer = Lexer::new("1 + 1 - 45 / 21 * 534 ^ (3897 % 4);");
     assert!(lexer.run().is_ok());
     assert_eq!(lexer.tokens, [
         Token { kind: Number(1.0), start: 0, len: 1, line: 1, col: 1 }, 
@@ -36,7 +36,8 @@ fn lexer() {
         Token { kind: Percent, start: 30, len: 1, line: 1, col: 31 }, 
         Token { kind: Number(4.0), start: 32, len: 1, line: 1, col: 33 }, 
         Token { kind: RightParen, start: 33, len: 1, line: 1, col: 34 },
-        Token { kind: EOI, start: 34, len: 0, line: 1, col: 35 },
+        Token { kind: Semicolon, start: 34, len: 1, line: 1, col: 35 },
+        Token { kind: EOI, start: 35, len: 0, line: 1, col: 36 },
     ]);
     // Test the lexer at other operators & datastructures & comments
     let mut lexer = Lexer::new("true == \"Hello World\" != false // Hello\n");
@@ -115,7 +116,7 @@ fn lexer() {
 #[test]
 fn compiler() {
     // Test arithmetic precedence and operations
-    let mut lexer = Lexer::new("(1 + 2) / 3 - 4 * 5 % 6 ^ 7");
+    let mut lexer = Lexer::new("(1 + 2) / 3 - 4 * 5 % 6 ^ 7;");
     assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
     assert!(compiler.compile().is_ok());
@@ -125,7 +126,7 @@ fn compiler() {
             (11, 1, OpConstant(2)), (9, 1, OpDiv), 
             (15, 1, OpConstant(3)), (19, 1, OpConstant(4)), (17, 1, OpMul), 
             (23, 1, OpConstant(5)), (27, 1, OpConstant(6)), (25, 1, OpPow), 
-            (21, 1, OpMod), (13, 1, OpSub), (28, 0, OpReturn)
+            (21, 1, OpMod), (13, 1, OpSub), (28, 0, OpPop)
         ],
         constants: vec![
             Value::Number(1.0), Value::Number(2.0), 
@@ -136,7 +137,7 @@ fn compiler() {
         line: 1,
     });
     // Test comparison
-    let mut lexer = Lexer::new("(4 + 23 > 324 == 32 <= 1) != (5 - 3 < 3 ^ 5 == 3 >= 4)");
+    let mut lexer = Lexer::new("(4 + 23 > 324 == 32 <= 1) != (5 - 3 < 3 ^ 5 == 3 >= 4);");
     assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
     assert!(compiler.compile().is_ok());
@@ -151,7 +152,7 @@ fn compiler() {
             (37, 1, OpLess), 
             (48, 1, OpConstant(9)), (53, 1, OpConstant(10)), (50, 2, OpLess), 
             (50, 2, OpNot), (45, 2, OpEqual), (27, 2, OpEqual), (27, 2, OpNot), 
-            (55, 0, OpReturn)
+            (55, 0, OpPop)
         ],
         constants: vec![
             Value::Number(4.0), Value::Number(23.0), 
@@ -164,7 +165,7 @@ fn compiler() {
         line: 1,
     });
     // Test equality
-    let mut lexer = Lexer::new("(true == nil) != (\"Hello\" == 4 + 6 ^ 2)");
+    let mut lexer = Lexer::new("(true == nil) != (\"Hello\" == 4 + 6 ^ 2);");
     assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
     assert!(compiler.compile().is_ok());
@@ -174,7 +175,7 @@ fn compiler() {
             (19, 7, OpConstant(0)), (30, 1, OpConstant(1)), 
             (34, 1, OpConstant(2)), (38, 1, OpConstant(3)), (36, 1, OpPow), 
             (32, 1, OpAdd), (27, 2, OpEqual), (15, 2, OpEqual), (15, 2, OpNot), 
-            (40, 0, OpReturn)
+            (40, 0, OpPop)
         ],
         constants: vec![
             Value::String("Hello".to_string()), Value::Number(4.0), 
@@ -183,7 +184,7 @@ fn compiler() {
         line: 1,
     });
     // Test unary operations
-    let mut lexer = Lexer::new("!true == not true");
+    let mut lexer = Lexer::new("!true == not true;");
     assert!(lexer.run().is_ok());
     let mut compiler = Compiler::new(lexer.tokens);
     assert!(compiler.compile().is_ok());
@@ -191,7 +192,7 @@ fn compiler() {
         code: vec![
             (2, 4, OpTrue), (1, 1, OpNot), 
             (14, 4, OpTrue), (10, 3, OpNot), 
-            (7, 2, OpEqual), (18, 0, OpReturn)
+            (7, 2, OpEqual), (18, 0, OpPop)
         ],
         constants: vec![],
         line: 1,
@@ -355,20 +356,20 @@ fn virtual_machine() {
 fn errors() {
     let string = "4 & 2";
     let character = Error::UnexpectedCharacter('&', 1, 3, 1);
-    character.display_line(string);
+    character.display_line(string, true);
     let string = "\"hello";
     let eoi = Error::UnexpectedEOI("Unterminated string".to_string());
-    eoi.display_line(string);
+    eoi.display_line(string, true);
     let string = "(4 + 2";
     let token = Error::ExpectedToken(RightParen, 1, 7, 0);
-    token.display_line(string);
+    token.display_line(string, true);
     let string = "4 +";
     let expression = Error::ExpectedExpression(1, 4, 0);
-    expression.display_line(string);
+    expression.display_line(string, true);
     let string = "true + 3";
     let types = Error::MismatchedTypes(1, 1, 4, "Operands must be numbers".to_string());
-    types.display_line(string);
+    types.display_line(string, true);
     let string = "\"a\" - \"b\"";
     let impossible = Error::ImpossibleOperation(1, 5, 1, "-".to_string());
-    impossible.display_line(string);
+    impossible.display_line(string, true);
 }

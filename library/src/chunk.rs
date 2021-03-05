@@ -6,6 +6,9 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq)]
 pub enum OpCode {
     OpConstant(u16),
+    OpDefineGlobal(u16),
+    OpGetGlobal(u16),
+    OpSetGlobal(u16),
     OpAdd,
     OpSub,
     OpMul,
@@ -20,6 +23,8 @@ pub enum OpCode {
     OpEqual,
     OpGreater,
     OpLess,
+    OpPrint,
+    OpPop,
     OpReturn,
 }
 
@@ -62,7 +67,10 @@ impl Chunk {
     pub fn disassemble_instruction(&self, instruction: &OpCode, col: usize) {
         // Disassemble and display an instruction
         match instruction {
-            OpCode::OpConstant(idx) => println!(
+            OpCode::OpConstant(idx) | 
+            OpCode::OpDefineGlobal(idx) | 
+            OpCode::OpSetGlobal(idx) |
+            OpCode::OpGetGlobal(idx) => println!(
                 "=> {}{:04} {:03} {}{}{} {}{}{} {}{}", 
                 Fg::Blue, self.line, col,
                 Fg::LightBlack, Style::Bold, instruction, Style::NoBold,
@@ -84,6 +92,9 @@ impl fmt::Display for OpCode {
         // Define how each opcode should be printed
         write!(fmt, "{}", match self {
             OpCode::OpConstant(_) => "OP_CONSTANT",
+            OpCode::OpDefineGlobal(_) => "OP_DEFINE_GLOBAL",
+            OpCode::OpGetGlobal(_) => "OP_GET_GLOBAL",
+            OpCode::OpSetGlobal(_) => "OP_SET_GLOBAL",
             OpCode::OpAdd => "OP_ADD",
             OpCode::OpSub => "OP_SUB",
             OpCode::OpMul => "OP_MUL",
@@ -99,6 +110,8 @@ impl fmt::Display for OpCode {
             OpCode::OpGreater => "OP_GREATER",
             OpCode::OpLess => "OP_LESS",
             OpCode::OpEqual => "OP_EQUAL",
+            OpCode::OpPrint => "OP_PRINT",
+            OpCode::OpPop => "OP_POP",
         })
     }
 }

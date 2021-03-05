@@ -61,7 +61,7 @@ fn file(path: &str, verbose: bool) {
     if let Ok(contents) = fs::read_to_string(path) {
         // Execute file contents
         let mut vm = VM::new(verbose);
-        run(&contents, &mut vm, verbose)
+        run(&contents, &mut vm, verbose, false)
     } else {
         println!("{}{}Error: Failed to find file '{}'{}", Red, Bold, path, Reset);
     }
@@ -78,11 +78,11 @@ fn repl(verbose: bool) {
     loop {
         // Prompt user for input
         let input: String = scanln!("> ");
-        run(&input, &mut vm, verbose)
+        run(&input, &mut vm, verbose, true)
     }
 }
 
-fn run(src: &str, vm: &mut VM, verbose: bool) {
+fn run(src: &str, vm: &mut VM, verbose: bool, repl: bool) {
     // Start timer
     let start = Instant::now();
     // Initiate a lexer
@@ -90,11 +90,12 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
     let mut lexer = Lexer::new(&src);
     // Run the lexer and handle any errors
     if let Err(error) = lexer.run() {
-        error.display_line(src);
+        error.display_line(src, repl);
         println!("{}{}{}{}", Red, Bold, error, Reset);
         return
     }
     // Show result
+    let lex = Instant::now();
     vprintln!(verbose, "\n{}{}Success!{} Token stream:", Green, Bold, Reset); 
     if verbose { lexer.display(); }
     // Initiate compiler
@@ -102,24 +103,30 @@ fn run(src: &str, vm: &mut VM, verbose: bool) {
     let mut compiler = Compiler::new(lexer.tokens);
     // Run the compiler and handle any errors
     if let Err(error) = compiler.compile() {
-        error.display_line(src);
+        error.display_line(src, repl);
         println!("{}{}{}{}", Red, Bold, error, Reset);
         return
     }
     // Show result
+    let com = Instant::now();
     vprintln!(verbose, "\n{}{}Success!{} Disassembled bytecode:", Green, Bold, Reset);
     if verbose { compiler.display(); }
     // Run virtual machine
     vprintln!(verbose, "{}{}\nExecuting bytecode chunk in VM:{}", Yellow, Bold, Reset);
     if let Err(error) = vm.run(compiler.chunk) {
-        error.display_line(src);
+        error.display_line(src, repl);
         println!("{}{}{}{}", Red, Bold, error, Reset);
         vm.reset();
         return
     }
+    // Print globals
+    vprintln!(verbose, "Globals: {:?}", vm.globals);
     // Reset virtual machine for next execution
     vm.reset();
     // Display success
     let end = Instant::now();
     println!("{}{}Success!{} Done in {}{:?}{}", Green, Bold, Reset, Blue, end - start, Reset);
+    println!("Lexer:    {:?}", lex - start);
+    println!("Compiler: {:?}", com - lex);
+    println!("VM:       {:?}", end - com);
 }

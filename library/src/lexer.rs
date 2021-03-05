@@ -1,4 +1,5 @@
 // lexer.rs - For turning streams of characters into tokens
+use unicode_width::UnicodeWidthStr as width;
 use crate::Error;
 use std::fmt;
 
@@ -7,14 +8,17 @@ use std::fmt;
 pub enum TokenKind {
     // Single character tokens
     Plus, Minus, Asterisk, Slash, Percent, Hat,
-    LeftParen, RightParen, Exclamation,
+    LeftParen, RightParen, Exclamation, Semicolon,
+    Equal,
     // Double character tokens
     Equals, NotEquals,
     Greater, Less, GreaterEq, LessEq,
     // Datatypes
     Number(f64), String(String),
     // Keywords
-    True, False, Nil, Not,
+    True, False, Nil, Not, Print, Var,
+    // Identifiers
+    Identifier(String),
     // Special
     EOI, Comment,
 }
@@ -26,6 +30,7 @@ impl fmt::Display for TokenKind {
         match self {
             Self::Number(_) => write!(fmt, "number"),
             Self::String(_) => write!(fmt, "string"),
+            Self::Identifier(_) => write!(fmt, "identifier"),
             Self::Comment => write!(fmt, "comment"),
             Self::Plus => write!(fmt, "'+'"),
             Self::Minus => write!(fmt, "'-'"),
@@ -33,6 +38,7 @@ impl fmt::Display for TokenKind {
             Self::Slash => write!(fmt, "'/'"),
             Self::Percent => write!(fmt, "'%'"),
             Self::Hat => write!(fmt, "'^'"),
+            Self::Equal => write!(fmt, "'='"),
             Self::LeftParen => write!(fmt, "'('"),
             Self::RightParen => write!(fmt, "')'"),
             Self::Exclamation => write!(fmt, "'!'"),
@@ -46,6 +52,9 @@ impl fmt::Display for TokenKind {
             Self::False => write!(fmt, "'false'"),
             Self::Nil => write!(fmt, "'nil'"),
             Self::Not => write!(fmt, "'not'"),
+            Self::Print => write!(fmt, "'print'"),
+            Self::Var => write!(fmt, "'var'"),
+            Self::Semicolon => write!(fmt, "';'"),
             Self::EOI => write!(fmt, "end of input"),
         }
     }
@@ -93,12 +102,13 @@ impl Lexer {
                 '^' => self.mk_token(TokenKind::Hat, 1),
                 '(' => self.mk_token(TokenKind::LeftParen, 1),
                 ')' => self.mk_token(TokenKind::RightParen, 1),
+                ';' => self.mk_token(TokenKind::Semicolon, 1),
                 // Check for the == token
                 '=' => if self.peek(1) == Some('=') {
                     self.advance();
                     self.mk_long_token(TokenKind::Equals, [2, ptr, line, col])
                 } else {
-                    return Err(Error::UnexpectedCharacter(c, self.line, self.col, 1))
+                    self.mk_token(TokenKind::Equal, 1)
                 }
                 // Check for the > or >= tokens
                 '>' => if self.peek(1) == Some('=') {
@@ -259,7 +269,7 @@ impl Lexer {
 
     fn word(&mut self) -> Result<(), Error> {
         // For identifiers & keywords
-        let (c, ptr, line, col) = (self.get().unwrap(), self.ptr, self.line, self.col);
+        let (ptr, line, col) = (self.ptr, self.line, self.col);
         // Capture entire word
         let mut word = String::new();
         while let Some(c) = self.get() {
@@ -274,12 +284,18 @@ impl Lexer {
         }
         // Look up the word and determine if keyword or identifier
         match word.as_str() {
+            // Keyword
             "true" => self.mk_long_token(TokenKind::True, [4, ptr, line, col]),
             "false" => self.mk_long_token(TokenKind::False, [5, ptr, line, col]),
             "nil" => self.mk_long_token(TokenKind::Nil, [3, ptr, line, col]),
             "not" => self.mk_long_token(TokenKind::Not, [3, ptr, line, col]),
-            //_ => return Err(Error::UnexpectedCharacter(c, line, col, width::width(word.as_str())))
-            _ => return Err(Error::UnexpectedCharacter(c, line, col, 1))
+            "print" => self.mk_long_token(TokenKind::Print, [5, ptr, line, col]),
+            "var" => self.mk_long_token(TokenKind::Var, [3, ptr, line, col]),
+            // Identifier
+            _ => self.mk_long_token(
+                TokenKind::Identifier(word.clone()),
+                [width::width(word.as_str()), ptr, line, col]
+            ),
         }
         Ok(())
     }

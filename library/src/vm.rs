@@ -1,5 +1,6 @@
 // vm.rs - Stack-based Bytecode Virtual Machine
 use crate::{Chunk, Error, OpCode, Value};
+use std::collections::HashMap;
 use round::round;
 
 const STACK_SIZE: usize = 256;
@@ -9,6 +10,7 @@ pub struct VM {
     pub stack: Vec<Value>,
     pub positions: Vec<(usize, usize)>,
     pub result: Option<Value>,
+    pub globals: HashMap<String, Value>,
     chunk: Chunk,
     verbose: bool,
 }
@@ -21,6 +23,7 @@ impl VM {
             positions: Vec::with_capacity(STACK_SIZE),
             chunk: Chunk::new(0),
             result: None,
+            globals: HashMap::default(),
             verbose,
         }
     }
@@ -109,6 +112,58 @@ impl VM {
                 // Carry out comparison operations
                 OpCode::OpGreater => self.bin_op(">", col)?,
                 OpCode::OpLess => self.bin_op("<", col)?,
+                // Print a value
+                OpCode::OpPrint => {
+                    self.positions.pop(); 
+                    println!("{}", self.stack.pop().unwrap())
+                }
+                // Defining a global variable
+                OpCode::OpDefineGlobal(idx) => {
+                    let value = self.stack.pop().unwrap();
+                    self.positions.pop();
+                    let id = self.chunk.constants[idx as usize].clone();
+                    if let Value::String(name) = id {
+                        self.globals.insert(name, value);
+                    }
+                }
+                // Updating a global variable
+                OpCode::OpSetGlobal(idx) => {
+                    let id = self.chunk.constants[idx as usize].clone();
+                    if let Value::String(name) = id {
+                        if let Some(_) = self.globals.get(&name) {
+                            // Variable was found
+                            self.globals.insert(name, self.peek(0).unwrap().to_owned());
+                        } else {
+                            // Variable not found
+                            return Err(Error::UndefinedVariable(
+                                self.chunk.line, 
+                                col, len, name
+                            ));
+                        }
+                    }
+                }
+                // Retrieving a global variable
+                OpCode::OpGetGlobal(idx) => {
+                    let id = self.chunk.constants[idx as usize].clone();
+                    if let Value::String(name) = id {
+                        if let Some(value) = self.globals.get(&name) {
+                            // Variable was found
+                            self.stack.push(value.to_owned());
+                            self.positions.push((col, len));
+                        } else {
+                            // Variable not found
+                            return Err(Error::UndefinedVariable(
+                                self.chunk.line, 
+                                col, len, name
+                            ));
+                        }
+                    }
+                }
+                // Discard a value from the stack
+                OpCode::OpPop => {
+                    self.stack.pop();
+                    self.positions.pop();
+                }
                 // Return a value from the stack
                 OpCode::OpReturn => {
                     self.positions.pop();

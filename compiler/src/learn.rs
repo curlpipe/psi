@@ -54,19 +54,19 @@ fn run_error(check: &str) -> bool {
     }
     let mut lexer = Lexer::new(&src);
     if let Err(error) = lexer.run() {
-        error.display_line(&src);
+        error.display_line(&src, true);
         println!("{}{}{}{}", Red, Bold, error, Reset);
         return false
     }
     let mut compiler = Compiler::new(lexer.tokens);
     if let Err(error) = compiler.compile() {
-        error.display_line(&src);
+        error.display_line(&src, true);
         println!("{}{}{}{}", Red, Bold, error, Reset);
         return false
     }
     let mut vm = VM::new(false);
     if let Err(error) = vm.run(compiler.chunk) {
-        error.display_line(&src);
+        error.display_line(&src, true);
         println!("{}{}{}{}", Red, Bold, error, Reset);
         vm.reset();
         return false

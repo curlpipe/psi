@@ -1,0 +1,10 @@
+var pi = 3.141;
+var radius = 5;
+var area = pi * radius ^ 2;
+var circumference = pi * (radius * 2);
+print "The radius is:";
+print radius;
+print "The area is:";
+print area;
+print "The circumference is:";
+print circumference;

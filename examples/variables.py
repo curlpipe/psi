@@ -1,0 +1,10 @@
+pi = 3.141;
+radius = 5;
+area = pi * radius ** 2;
+circumference = pi * (radius * 2);
+print("The radius is:");
+print(radius);
+print("The area is:");
+print(area);
+print("The circumference is:");
+print(circumference);

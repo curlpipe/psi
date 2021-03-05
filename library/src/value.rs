@@ -15,9 +15,9 @@ impl fmt::Display for Value {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         // Define how to print certain values
         match self {
-            Self::Number(f) => write!(fmt, "'{}'", round(*f, 5)),
+            Self::Number(f) => write!(fmt, "{}", round(*f, 5)),
             Self::Boolean(b) => write!(fmt, "{}", b),
-            Self::String(s) => write!(fmt, "\"{}\"", s),
+            Self::String(s) => write!(fmt, "{}", s),
             Self::Nil => write!(fmt, "nil"),
         }
     }
