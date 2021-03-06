@@ -126,7 +126,7 @@ fn run(src: &str, vm: &mut VM, verbose: bool, repl: bool) {
     // Display success
     let end = Instant::now();
     println!("{}{}Success!{} Done in {}{:?}{}", Green, Bold, Reset, Blue, end - start, Reset);
-    println!("Lexer:    {:?}", lex - start);
-    println!("Compiler: {:?}", com - lex);
-    println!("VM:       {:?}", end - com);
+    vprintln!(verbose, "Lexer:    {:?}", lex - start);
+    vprintln!(verbose, "Compiler: {:?}", com - lex);
+    vprintln!(verbose, "VM:       {:?}", end - com);
 }

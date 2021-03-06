@@ -8,8 +8,8 @@ use std::fmt;
 pub enum TokenKind {
     // Single character tokens
     Plus, Minus, Asterisk, Slash, Percent, Hat,
-    LeftParen, RightParen, Exclamation, Semicolon,
-    Equal,
+    LeftParen, RightParen, Exclamation,
+    Equal, LeftCurly, RightCurly, Semicolon,
     // Double character tokens
     Equals, NotEquals,
     Greater, Less, GreaterEq, LessEq,
@@ -20,7 +20,7 @@ pub enum TokenKind {
     // Identifiers
     Identifier(String),
     // Special
-    EOI, Comment,
+    EOI, Comment, Delim,
 }
 
 impl fmt::Display for TokenKind {
@@ -41,9 +41,12 @@ impl fmt::Display for TokenKind {
             Self::Equal => write!(fmt, "'='"),
             Self::LeftParen => write!(fmt, "'('"),
             Self::RightParen => write!(fmt, "')'"),
+            Self::LeftCurly => write!(fmt, "'{{'"),
+            Self::RightCurly => write!(fmt, "'}}'"),
             Self::Exclamation => write!(fmt, "'!'"),
             Self::Greater => write!(fmt, "'>'"),
             Self::Less => write!(fmt, "'<'"),
+            Self::Semicolon => write!(fmt, "';'"),
             Self::GreaterEq => write!(fmt, "'>='"),
             Self::LessEq => write!(fmt, "'<='"),
             Self::Equals => write!(fmt, "'=='"),
@@ -54,7 +57,7 @@ impl fmt::Display for TokenKind {
             Self::Not => write!(fmt, "'not'"),
             Self::Print => write!(fmt, "'print'"),
             Self::Var => write!(fmt, "'var'"),
-            Self::Semicolon => write!(fmt, "';'"),
+            Self::Delim => write!(fmt, "delimeter"),
             Self::EOI => write!(fmt, "end of input"),
         }
     }
@@ -72,6 +75,7 @@ pub struct Token {
 pub struct Lexer {
     chars: Vec<char>,
     pub tokens: Vec<Token>,
+    level: usize,
     ptr: usize,
     line: usize,
     col: usize,
@@ -83,6 +87,7 @@ impl Lexer {
         Self {
             chars: src.chars().collect(),
             tokens: vec![],
+            level: 0,
             ptr: 0,
             line: 1,
             col: 1
@@ -102,7 +107,9 @@ impl Lexer {
                 '^' => self.mk_token(TokenKind::Hat, 1),
                 '(' => self.mk_token(TokenKind::LeftParen, 1),
                 ')' => self.mk_token(TokenKind::RightParen, 1),
-                ';' => self.mk_token(TokenKind::Semicolon, 1),
+                '{' => self.mk_token(TokenKind::LeftCurly, 1),
+                '}' => self.mk_token(TokenKind::RightCurly, 1),
+                ';' => self.mk_token(TokenKind::Delim, 1),
                 // Check for the == token
                 '=' => if self.peek(1) == Some('=') {
                     self.advance();
@@ -195,11 +202,34 @@ impl Lexer {
                 '\n' => {
                     self.line += 1;
                     self.col = 1;
+                    if let Some(tok) = self.tokens.last() {
+                        match tok.kind {
+                            TokenKind::RightParen |
+                            TokenKind::RightCurly | 
+                            TokenKind::String(_) |
+                            TokenKind::Number(_) |
+                            TokenKind::Identifier(_) |
+                            TokenKind::True | 
+                            TokenKind::False |
+                            TokenKind::Nil | 
+                            TokenKind::Comment => self.mk_token(TokenKind::Delim, 0),
+                            TokenKind::Semicolon => {
+                                self.tokens.pop();
+                                self.mk_token(TokenKind::Delim, 1);
+                            }
+                            _ => (),
+                        }
+                    }
                 }
                 // Handle the event of an unrecognised character
                 _ => return Err(Error::UnexpectedCharacter(c, self.line, self.col, 1)),
             }
             self.advance();
+        }
+        // Add in a statement delimiter if needed
+        if let Some(Token{ kind: TokenKind::Delim, ..}) = self.tokens.last() {
+        } else {
+            self.mk_token(TokenKind::Delim, 0);
         }
         // Append an EOI (end of input) token
         self.mk_token(TokenKind::EOI, 0);
@@ -329,6 +359,11 @@ impl Lexer {
 
     fn mk_token(&mut self, kind: TokenKind, len: usize) {
         // Generates a token from the current status
+        match kind {
+            TokenKind::LeftParen | TokenKind::LeftCurly =>  self.level += 1,
+            TokenKind::RightParen | TokenKind::RightCurly =>  self.level -= 1,
+            _ => (),
+        }
         self.tokens.push(Token {
             kind,
             len,

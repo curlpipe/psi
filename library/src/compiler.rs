@@ -69,7 +69,7 @@ impl Compiler {
     fn expression_statement(&mut self) -> Result<(), Error> {
         // Expression that acts as a statement
         self.expression()?;
-        self.consume(TokenKind::Semicolon)?;
+        self.consume(TokenKind::Delim)?;
         self.emit_byte(OpCode::OpPop, self.get_back().unwrap().col, 0);
         Ok(())
     }
@@ -83,7 +83,7 @@ impl Compiler {
         } else {
             self.expression()?;
         }
-        self.consume(TokenKind::Semicolon)?;
+        self.consume(TokenKind::Delim)?;
         self.define_variable(global)?;
         Ok(())
     }
@@ -91,7 +91,7 @@ impl Compiler {
     fn print_statement(&mut self, col: usize) -> Result<(), Error> {
         // Consume a print statement and emit print operation
         self.expression()?;
-        self.consume(TokenKind::Semicolon)?;
+        self.consume(TokenKind::Delim)?;
         self.emit_byte(OpCode::OpPrint, col, 5);
         Ok(())
     }
@@ -117,7 +117,7 @@ impl Compiler {
                     infix(self, can_assign)?;
                 }
             }
-            if !can_assign && self.present(TokenKind::Equal)? == 0 {
+            if !can_assign && self.present(TokenKind::Equal)? != 0 {
                 Err(Error::InvalidAssignmentTarget(current.line, current.col, current.len))
             } else {
                 Ok(())

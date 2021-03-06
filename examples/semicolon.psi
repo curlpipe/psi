@@ -1,0 +1,4 @@
+print "This has implicit semicolons"
+print "This line doesn't";
+print "You can use them interchangeably"
+print "and even like"; print "This"
